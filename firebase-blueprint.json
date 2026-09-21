@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "PatientProfile": {
+      "fields": {
+        "fullName": { "type": "string" },
+        "preferredName": { "type": "string" },
+        "age": { "type": "number" },
+        "region": { "type": "string" },
+        "state": { "type": "string" },
+        "preferredLanguage": { "type": "string" },
+        "caregiverName": { "type": "string" },
+        "caregiverPhone": { "type": "string" },
+        "dailyStreak": { "type": "number" },
+        "todayCompletedCount": { "type": "number" }
+      }
+    },
+    "GameSessionResult": {
+      "fields": {
+        "gameId": { "type": "string" },
+        "patientId": { "type": "string" },
+        "difficulty": { "type": "number" },
+        "accuracy": { "type": "number" },
+        "reactionTimeMs": { "type": "number" },
+        "completionTimeMs": { "type": "number" },
+        "attempts": { "type": "number" },
+        "mistakes": { "type": "number" },
+        "hintsUsed": { "type": "number" },
+        "completedAt": { "type": "string" }
+      }
+    },
+    "RoutineTask": {
+      "fields": {
+        "title": { "type": "string" },
+        "timeSlot": { "type": "string" },
+        "time": { "type": "string" },
+        "completed": { "type": "boolean" }
+      }
+    },
+    "ReminderItem": {
+      "fields": {
+        "patientId": { "type": "string" },
+        "title": { "type": "string" },
+        "time": { "type": "string" },
+        "period": { "type": "string" },
+        "completedToday": { "type": "boolean" },
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "MemoryMoment": {
+      "fields": {
+        "patientId": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "region": { "type": "string" },
+        "story": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "dateLabel": { "type": "string" }
+      }
+    },
+    "PersonInLife": {
+      "fields": {
+        "patientId": { "type": "string" },
+        "name": { "type": "string" },
+        "relationship": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "description": { "type": "string" },
+        "birthday": { "type": "string" },
+        "marriageDate": { "type": "string" },
+        "likes": { "type": "string" },
+        "dislikes": { "type": "string" },
+        "personality": { "type": "string" },
+        "phone": { "type": "string" },
+        "location": { "type": "string" }
+      }
+    }
+  },
+  "firestoreRules": "rules_version = '2'; service cloud.firestore { match /databases/{database}/documents { match /{document=**} { allow read, write: if true; } } }"
+}

@@ -1,0 +1,77 @@
+{
+  "patients": [
+    {
+      "id": "patient-1789966662467",
+      "fullName": "aditya",
+      "preferredName": "aditya",
+      "username": "ad2222",
+      "password": "$scrypt$26f14d8f858fe1f455823b197652ff0c$0693b375da1fdd66e6fde898cbd643d318cfb1e87f5da4dd7de07df81aa371f6c26fc2372102d0396be781759775a13b3d954e0c35fd774037c61fabf1f90349",
+      "pin": "$scrypt$77489a0b932ebd20f3c1b4ae57c14276$14072ab651c9f838bf07a584da24bdfe53ca73b418554b3f6417394e095e18d575f8942d1d423ad547f50b10deb5d18ff41f83c459eee031a166139488612e74",
+      "patientKey": "PT-275320",
+      "age": 72,
+      "region": "Guwahati, Assam",
+      "state": "Assam",
+      "preferredLanguage": "en",
+      "phone": "1234567890",
+      "hasCaregiver": true,
+      "caregiverName": "son2 (Son / Daughter)",
+      "caregiverPhone": "0987654321",
+      "avatarUrl": "",
+      "dailyStreak": 1,
+      "todayCompletedCount": 1,
+      "linkedCaregiverKey": "CG-KUB5JZ"
+    }
+  ],
+  "caretakers": [
+    {
+      "id": "caretaker-1789966754438",
+      "fullName": "son2",
+      "username": "son2222",
+      "password": "$scrypt$213a2390c77aaa0ae7462b9629541063$cadcd90a7a17464aafb235ceb32558a300c08217670db181ebc13d441649907cf904e523429fe6200e126944cbc396879ae0110aa26cf285efcd4e964c266d69",
+      "phone": "0987654321",
+      "email": "",
+      "relation": "Son / Daughter",
+      "pin": "$scrypt$7a220ee9384f1f204ab1929871f92b87$5f8d19b656673e739d23ce2cd66dfb63033e64444c3ad5fe889ec3fa5f4b3768fcda78ab999960f88cf17611324b642877d5ff2f51e236f00fbe29940178bf10",
+      "caregiverKey": "CG-KUB5JZ",
+      "assignedPatientIds": [
+        "patient-1789966662467"
+      ],
+      "avatarUrl": ""
+    }
+  ],
+  "routines": {
+    "patient-1789966662467": [
+      {
+        "id": "rt-1789971748374",
+        "title": "take a walk",
+        "timeSlot": "Morning",
+        "time": "09:00 AM",
+        "icon": "CalendarCheck",
+        "completed": false
+      }
+    ]
+  },
+  "reminders": {},
+  "memories": {
+    "patient-1789966662467": []
+  },
+  "sessions": {
+    "patient-1789966662467": [
+      {
+        "id": "session-mt-1789967112248",
+        "gameId": "memory-tiles",
+        "patientId": "patient-1789966662467",
+        "difficulty": 2,
+        "accuracy": 55,
+        "reactionTimeMs": 1750,
+        "completionTimeMs": 19254,
+        "attempts": 11,
+        "mistakes": 5,
+        "hintsUsed": 0,
+        "completedAt": "2026-09-21T05:05:12.248Z",
+        "syncStatus": "pending"
+      }
+    ]
+  },
+  "connectionRequests": []
+}

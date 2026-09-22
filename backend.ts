@@ -3,7 +3,6 @@ import http from 'http';
 import path from 'path';
 import crypto from 'crypto';
 import { WebSocketServer, WebSocket } from 'ws';
-import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { ServerDB, sanitizeProfile, verifyPassword, hashPassword } from './server/db.js';
 import { PatientProfile, CaretakerProfile } from './src/types.js';
@@ -1741,6 +1740,7 @@ Always call the tool first if asked about their day, schedule, or medications.`;
   });
 
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',

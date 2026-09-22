@@ -585,7 +585,7 @@ export const MusicPatternGame: React.FC<MusicPatternGameProps> = ({
   return (
     <div
       id="music-pattern-game-container"
-      className="fixed inset-0 z-50 bg-[#FAF8F5] flex flex-col overflow-y-auto select-none"
+      className="fixed inset-0 z-50 bg-[#FAF8F5] dark:bg-[#0D1117] flex flex-col overflow-y-auto select-none"
     >
       {/* Top Header */}
       <header className="bg-teal-850 text-white px-4 py-3 sm:px-6 flex items-center justify-between shadow-xs sticky top-0 z-20">
@@ -638,14 +638,14 @@ export const MusicPatternGame: React.FC<MusicPatternGameProps> = ({
       </header>
 
       {/* Control Ribbon: Grid Mode Selector & Scoreboard */}
-      <div className="bg-white border-b border-stone-200 px-4 py-2.5 shadow-2xs">
+      <div className="bg-white dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800 px-4 py-2.5 shadow-2xs">
         <div className="max-w-xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
           {/* Mode Switcher */}
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-stone-700">
+            <span className="font-semibold text-stone-700 dark:text-stone-300">
               {language === 'as' ? 'মোড:' : language === 'hi' ? 'मोड:' : language === 'mni' ? 'মোদ:' : 'Mode:'}
             </span>
-            <div className="inline-flex bg-stone-100 p-0.5 rounded-xl border border-stone-200">
+            <div className="inline-flex bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl border border-stone-200 dark:border-stone-700">
               <button
                 id="music-mode-2x2-btn"
                 onClick={() => {
@@ -667,7 +667,7 @@ export const MusicPatternGame: React.FC<MusicPatternGameProps> = ({
                 className={`px-3 py-1 rounded-lg font-semibold transition-all ${
                   gridMode === '2x2'
                     ? 'bg-teal-850 text-white shadow-2xs'
-                    : 'text-stone-600 hover:text-stone-900'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
                 }`}
               >
                 {language === 'as' ? '২×২ গ্ৰিড' : language === 'hi' ? '२×२ ग्रिड' : language === 'mni' ? '২×২ গ্রিদ' : '2×2 Grid (4 Pads)'}
@@ -693,7 +693,7 @@ export const MusicPatternGame: React.FC<MusicPatternGameProps> = ({
                 className={`px-3 py-1 rounded-lg font-semibold transition-all ${
                   gridMode === '3x3'
                     ? 'bg-teal-850 text-white shadow-2xs'
-                    : 'text-stone-600 hover:text-stone-900'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
                 }`}
               >
                 {language === 'as' ? '৩×৩ গ্ৰিড' : language === 'hi' ? '३×३ ग्रिड' : language === 'mni' ? '৩×৩ গ্রিদ' : '3×3 Grid (9 Pads)'}
@@ -703,7 +703,7 @@ export const MusicPatternGame: React.FC<MusicPatternGameProps> = ({
 
           {/* Stats Badges */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 text-amber-900">
+            <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200">
               <Trophy className="w-3.5 h-3.5 text-amber-500" />
               <span className="font-bold">
                 {language === 'as' ? 'সৰ্বোচ্চ:' : language === 'hi' ? 'सर्वश्रेष्ठ:' : language === 'mni' ? 'খ্বাইদগী য়াম্বা:' : 'Best:'} {highScore}
@@ -711,7 +711,7 @@ export const MusicPatternGame: React.FC<MusicPatternGameProps> = ({
             </div>
 
             {gameState !== 'idle' && (
-              <div className="flex items-center gap-1.5 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200 text-teal-900">
+              <div className="flex items-center gap-1.5 bg-teal-50 dark:bg-teal-950/40 px-2.5 py-1 rounded-lg border border-teal-200 dark:border-teal-800 text-teal-900 dark:text-teal-200">
                 <Flame className="w-3.5 h-3.5 text-rose-500" />
                 <span className="font-bold">
                   {language === 'as' ? 'ৰাউণ্ড' : language === 'hi' ? 'राउंड' : language === 'mni' ? 'রাউন্দ' : 'Round'} {round}
@@ -725,13 +725,13 @@ export const MusicPatternGame: React.FC<MusicPatternGameProps> = ({
       {/* Main Game Stage */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 max-w-xl mx-auto w-full">
         {/* Status Notification Banner */}
-        <div className="w-full bg-white rounded-2xl border border-stone-200 p-3 mb-4 shadow-2xs flex items-center justify-between gap-3 text-center">
+        <div className="w-full bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 p-3 mb-4 shadow-2xs flex items-center justify-between gap-3 text-center">
           <div className="flex-1">
-            <p className="text-xs sm:text-sm font-semibold text-stone-800">{statusMessage}</p>
+            <p className="text-xs sm:text-sm font-semibold text-stone-800 dark:text-stone-100">{statusMessage}</p>
             {gameState !== 'idle' && gameState !== 'game-over' && (
-              <p className="text-[10px] sm:text-[11px] text-stone-500 mt-0.5">
+              <p className="text-[10px] sm:text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">
                 {language === 'as' ? 'গতি:' : language === 'hi' ? 'गति:' : language === 'mni' ? 'খোঙজেল:' : 'Speed:'}{' '}
-                <span className="font-medium text-teal-800">{tempoLabel}</span> ({currentInterval}ms) •{' '}
+                <span className="font-medium text-teal-800 dark:text-teal-400">{tempoLabel}</span> ({currentInterval}ms) •{' '}
                 {language === 'as' ? 'খোজ' : language === 'hi' ? 'चरण' : language === 'mni' ? 'থাক' : 'Step'}{' '}
                 {gameState === 'player-turn' ? playerStep + 1 : 0} / {sequence.length}
               </p>
@@ -742,7 +742,7 @@ export const MusicPatternGame: React.FC<MusicPatternGameProps> = ({
             <button
               id="music-repeat-melody-btn"
               onClick={handleRepeatMelody}
-              className="px-2.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-[11px] font-semibold flex items-center gap-1 border border-stone-300 transition-colors"
+              className="px-2.5 py-1.5 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 rounded-xl text-[11px] font-semibold flex items-center gap-1 border border-stone-300 dark:border-stone-700 transition-colors"
               title="Listen to the pattern again"
             >
               <RotateCcw className="w-3 h-3" />
@@ -755,16 +755,16 @@ export const MusicPatternGame: React.FC<MusicPatternGameProps> = ({
 
         {gameState === 'idle' ? (
           /* Start Screen */
-          <div className="w-full bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-md text-center">
-            <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4">
+          <div className="w-full bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 border border-stone-200 dark:border-stone-800 shadow-md text-center">
+            <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto mb-4">
               <Music className="w-8 h-8" />
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-serif font-bold text-stone-900 mb-2">
+            <h2 className="text-xl sm:text-2xl font-serif font-bold text-stone-900 dark:text-stone-100 mb-2">
               {language === 'as' ? 'সংগীতৰ শৈলী অনুশীলন' : language === 'hi' ? 'संगीत अनुक्रम चुनौती' : language === 'mni' ? 'ম্যুজিক শৈথা শিংনবা' : 'Musical Sequence Challenge'}
             </h2>
 
-            <p className="text-xs sm:text-sm text-stone-600 max-w-md mx-auto mb-6">
+            <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400 max-w-md mx-auto mb-6">
               {language === 'as'
                 ? 'বাদ্যযন্ত্ৰবোৰৰ সুৰ আৰু পোহৰ লক্ষ্য কৰক। একে অনুক্ৰমত পেডবোৰ স্পৰ্শ কৰক। প্ৰতিটো ৰাউণ্ড দ্ৰুত হ’ব!'
                 : language === 'hi'
@@ -775,19 +775,19 @@ export const MusicPatternGame: React.FC<MusicPatternGameProps> = ({
             </p>
 
             <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto mb-6 text-left">
-              <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
-                <span className="text-[10px] uppercase font-bold text-stone-500">
+              <div className="p-3 bg-stone-50 dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700">
+                <span className="text-[10px] uppercase font-bold text-stone-500 dark:text-stone-400">
                   {language === 'as' ? 'নিৰ্বাচিত গ্ৰিড' : language === 'hi' ? 'चुना गया ग्रिड' : language === 'mni' ? 'খল্লবা গ্রিদ' : 'Selected Grid'}
                 </span>
-                <p className="text-sm font-bold text-teal-850 mt-0.5">
+                <p className="text-sm font-bold text-teal-850 dark:text-teal-400 mt-0.5">
                   {gridMode === '2x2' ? '2×2 (4 Pads)' : '3×3 (9 Pads)'}
                 </p>
               </div>
-              <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
-                <span className="text-[10px] uppercase font-bold text-stone-500">
+              <div className="p-3 bg-stone-50 dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700">
+                <span className="text-[10px] uppercase font-bold text-stone-500 dark:text-stone-400">
                   {language === 'as' ? 'মোড ৰেকৰ্ড' : language === 'hi' ? 'मोड रिकॉर्ड' : language === 'mni' ? 'মোদ রেকোর্দ' : 'Mode Record'}
                 </span>
-                <p className="text-sm font-bold text-amber-600 mt-0.5">
+                <p className="text-sm font-bold text-amber-600 dark:text-amber-400 mt-0.5">
                   {highScore} {language === 'as' ? 'ৰাউণ্ড' : language === 'hi' ? 'राउंड' : language === 'mni' ? 'রাউন্দ' : 'Rounds'}
                 </p>
               </div>
@@ -808,36 +808,36 @@ export const MusicPatternGame: React.FC<MusicPatternGameProps> = ({
           /* Game Over Modal with High Score Celebration */
           <div
             id="music-game-over-card"
-            className="w-full bg-white rounded-3xl p-6 sm:p-7 border border-amber-200 shadow-lg text-center animate-in fade-in zoom-in"
+            className="w-full bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-7 border border-amber-200 dark:border-amber-800/60 shadow-lg text-center animate-in fade-in zoom-in"
           >
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-300 to-amber-500 text-teal-950 flex items-center justify-center mx-auto mb-3 shadow-xs">
               {isNewHighScore ? <Sparkles className="w-8 h-8" /> : <Trophy className="w-8 h-8" />}
             </div>
 
             {isNewHighScore && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold uppercase tracking-wider mb-2">
-                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs font-bold uppercase tracking-wider mb-2">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                 <span>
                   {language === 'as' ? 'নতুন সৰ্বোচ্চ স্কোৰ!' : language === 'hi' ? 'नया उच्च स्कोर!' : language === 'mni' ? 'অনৌবা হাই স্কোর!' : 'New High Score!'}
                 </span>
               </div>
             )}
 
-            <h2 className="text-xl sm:text-2xl font-serif font-bold text-stone-900 mb-1">
+            <h2 className="text-xl sm:text-2xl font-serif font-bold text-stone-900 dark:text-stone-100 mb-1">
               {isNewHighScore
                 ? (language === 'as' ? 'অসাধাৰণ স্মৃতিশক্তি!' : language === 'hi' ? 'अद्भुत स्मरण शक्ति!' : language === 'mni' ? 'য়াম্না ফজবা নিংশিংবা!' : 'Tremendous Memory!')
                 : (language === 'as' ? 'ভাল প্ৰয়াস!' : language === 'hi' ? 'सराहनीय प्रयास!' : language === 'mni' ? 'অফেবা হোৎনবা!' : 'Good Effort!')}
             </h2>
 
-            <p className="text-xs text-stone-600 mb-4">
+            <p className="text-xs text-stone-600 dark:text-stone-400 mb-4">
               {language === 'as' ? (
-                <>আপুনি <span className="font-semibold text-teal-900">{gridMode} গ্ৰিডত</span> খেলি <span className="font-semibold text-teal-900">ৰাউণ্ড {round}</span> পালেগৈ।</>
+                <>আপুনি <span className="font-semibold text-teal-900 dark:text-teal-300">{gridMode} গ্ৰিডত</span> খেলি <span className="font-semibold text-teal-900 dark:text-teal-300">ৰাউণ্ড {round}</span> পালেগৈ।</>
               ) : language === 'hi' ? (
-                <>आपने <span className="font-semibold text-teal-900">{gridMode} ग्रिड मोड</span> में खेलकर <span className="font-semibold text-teal-900">राउंड {round}</span> हासिल किया।</>
+                <>आपने <span className="font-semibold text-teal-900 dark:text-teal-300">{gridMode} ग्रिड मोड</span> में खेलकर <span className="font-semibold text-teal-900 dark:text-teal-300">राउंड {round}</span> हासिल किया।</>
               ) : language === 'mni' ? (
-                <>অদোম্না <span className="font-semibold text-teal-900">{gridMode} গ্রিদ মোদতা</span> শান্দুনা <span className="font-semibold text-teal-900">রাউন্দ {round}</span> য়ৌরে।</>
+                <>অদোম্না <span className="font-semibold text-teal-900 dark:text-teal-300">{gridMode} গ্রিদ মোদতা</span> শান্দুনা <span className="font-semibold text-teal-900 dark:text-teal-300">রাউন্দ {round}</span> য়ৌরে।</>
               ) : (
-                <>You played in <span className="font-semibold text-teal-900">{gridMode} Grid Mode</span> and reached <span className="font-semibold text-teal-900">Round {round}</span>.</>
+                <>You played in <span className="font-semibold text-teal-900 dark:text-teal-300">{gridMode} Grid Mode</span> and reached <span className="font-semibold text-teal-900 dark:text-teal-300">Round {round}</span>.</>
               )}
             </p>
 
@@ -845,7 +845,7 @@ export const MusicPatternGame: React.FC<MusicPatternGameProps> = ({
             <button
               id="music-read-results-btn"
               onClick={handleReadResultsAloud}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-5 rounded-full bg-teal-50 hover:bg-teal-100 text-teal-850 text-xs font-semibold border border-teal-200 transition-colors mx-auto"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-5 rounded-full bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-850 dark:text-teal-300 text-xs font-semibold border border-teal-200 dark:border-teal-800 transition-colors mx-auto"
             >
               <Volume2 className="w-3.5 h-3.5" />
               <span>
@@ -855,30 +855,30 @@ export const MusicPatternGame: React.FC<MusicPatternGameProps> = ({
 
             {/* Metrics Breakdown */}
             <div className="grid grid-cols-3 gap-2.5 text-center mb-6">
-              <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-200">
-                <span className="text-[10px] text-stone-500 font-bold uppercase">
+              <div className="p-2.5 bg-stone-50 dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700">
+                <span className="text-[10px] text-stone-500 dark:text-stone-400 font-bold uppercase">
                   {language === 'as' ? 'স্কোৰ' : language === 'hi' ? 'स्कोर' : language === 'mni' ? 'স্কোর' : 'Score'}
                 </span>
-                <p className="text-xl font-bold text-teal-850 mt-0.5">{Math.max(0, round - 1)}</p>
-                <span className="text-[9px] text-stone-500">
+                <p className="text-xl font-bold text-teal-850 dark:text-teal-400 mt-0.5">{Math.max(0, round - 1)}</p>
+                <span className="text-[9px] text-stone-500 dark:text-stone-400">
                   {language === 'as' ? 'উত্তীৰ্ণ ৰাউণ্ড' : language === 'hi' ? 'पूरे किए गए राउंड' : language === 'mni' ? 'লোইশিনখিবা রাউন্দ' : 'Rounds cleared'}
                 </span>
               </div>
 
-              <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-200">
-                <span className="text-[10px] text-stone-500 font-bold uppercase">
+              <div className="p-2.5 bg-stone-50 dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700">
+                <span className="text-[10px] text-stone-500 dark:text-stone-400 font-bold uppercase">
                   {language === 'as' ? 'সৰ্বোচ্চ স্কোৰ' : language === 'hi' ? 'उच्च स्कोर' : language === 'mni' ? 'হাই স্কোর' : 'High Score'}
                 </span>
-                <p className="text-xl font-bold text-amber-600 mt-0.5">{highScore}</p>
-                <span className="text-[9px] text-stone-500">{gridMode} record</span>
+                <p className="text-xl font-bold text-amber-600 dark:text-amber-400 mt-0.5">{highScore}</p>
+                <span className="text-[9px] text-stone-500 dark:text-stone-400">{gridMode} record</span>
               </div>
 
-              <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-200">
-                <span className="text-[10px] text-stone-500 font-bold uppercase">
+              <div className="p-2.5 bg-stone-50 dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700">
+                <span className="text-[10px] text-stone-500 dark:text-stone-400 font-bold uppercase">
                   {language === 'as' ? 'শীৰ্ষ গতি' : language === 'hi' ? 'शीर्ष गति' : language === 'mni' ? 'খ্বাইদগী য়াংবা' : 'Top Speed'}
                 </span>
-                <p className="text-sm font-bold text-stone-800 mt-1 truncate">{tempoLabel}</p>
-                <span className="text-[9px] text-stone-500">{currentInterval}ms</span>
+                <p className="text-sm font-bold text-stone-800 dark:text-stone-200 mt-1 truncate">{tempoLabel}</p>
+                <span className="text-[9px] text-stone-500 dark:text-stone-400">{currentInterval}ms</span>
               </div>
             </div>
 
@@ -911,7 +911,7 @@ export const MusicPatternGame: React.FC<MusicPatternGameProps> = ({
                       : `Switched to ${nextMode} mode. Tap Start!`
                   );
                 }}
-                className="flex-1 py-3 bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold text-xs sm:text-sm rounded-xl border border-stone-300 transition-colors cursor-pointer"
+                className="flex-1 py-3 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 font-semibold text-xs sm:text-sm rounded-xl border border-stone-300 dark:border-stone-700 transition-colors cursor-pointer"
               >
                 <span>
                   {language === 'as'
@@ -968,7 +968,7 @@ export const MusicPatternGame: React.FC<MusicPatternGameProps> = ({
             </div>
 
             {/* Bottom Gentle Reassurance */}
-            <p className="text-xs text-stone-500 mt-5 text-center">
+            <p className="text-xs text-stone-500 dark:text-stone-400 mt-5 text-center">
               {gameState === 'showing-sequence'
                 ? (language === 'as'
                     ? '👂 শুনাৰ সময়: জ্বলি থকা পেডবোৰৰ ক্ৰম মনত ৰাখক...'

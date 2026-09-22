@@ -176,17 +176,17 @@ export const PhotoUploadZone: React.FC<PhotoUploadZoneProps> = ({
   return (
     <div id={`${idPrefix}-container`} className="space-y-2.5">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-bold uppercase tracking-wider text-stone-700 flex items-center gap-1.5">
-          <ImageIcon className="w-3.5 h-3.5 text-teal-800" />
+        <label className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
+          <ImageIcon className="w-3.5 h-3.5 text-teal-800 dark:text-teal-400" />
           <span>{label}</span>
           {photos.length > 0 && (
-            <span className="text-[11px] font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+            <span className="text-[11px] font-semibold text-teal-800 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 px-2 py-0.5 rounded-full border border-teal-200 dark:border-teal-800">
               {photos.length} {photos.length === 1 ? 'photo' : 'photos'} attached
             </span>
           )}
         </label>
         {photos.length > 0 && photos.length < maxPhotos && (
-          <span className="text-[11px] text-stone-500">
+          <span className="text-[11px] text-stone-500 dark:text-stone-400">
             Can add {maxPhotos - photos.length} more
           </span>
         )}
@@ -201,8 +201,8 @@ export const PhotoUploadZone: React.FC<PhotoUploadZoneProps> = ({
         onClick={() => fileInputRef.current?.click()}
         className={`relative border-2 border-dashed rounded-2xl p-4 sm:p-5 text-center cursor-pointer transition-all ${
           isDragging
-            ? 'border-teal-600 bg-teal-50/80 scale-[1.01]'
-            : 'border-stone-300 hover:border-teal-700 bg-stone-50 hover:bg-teal-50/30'
+            ? 'border-teal-600 bg-teal-50/80 dark:bg-teal-950/40 scale-[1.01]'
+            : 'border-stone-300 dark:border-stone-700 hover:border-teal-700 dark:hover:border-teal-500 bg-stone-50 dark:bg-stone-800/60 hover:bg-teal-50/30 dark:hover:bg-stone-800'
         }`}
       >
         <input
@@ -217,20 +217,20 @@ export const PhotoUploadZone: React.FC<PhotoUploadZoneProps> = ({
 
         <div className="flex flex-col items-center justify-center gap-2">
           {isProcessing ? (
-            <div className="flex flex-col items-center gap-1.5 text-teal-900 py-1">
-              <Loader2 className="w-7 h-7 animate-spin text-teal-700" />
+            <div className="flex flex-col items-center gap-1.5 text-teal-900 dark:text-teal-200 py-1">
+              <Loader2 className="w-7 h-7 animate-spin text-teal-700 dark:text-teal-400" />
               <span className="text-xs font-semibold">Optimizing and preparing photos...</span>
             </div>
           ) : (
             <>
-              <div className="w-10 h-10 rounded-full bg-teal-100 text-teal-850 flex items-center justify-center shadow-2xs">
+              <div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-950/60 text-teal-850 dark:text-teal-300 flex items-center justify-center shadow-2xs">
                 <Upload className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-xs sm:text-sm font-semibold text-stone-800">
-                  <span className="text-teal-800 underline decoration-teal-400">Click to upload photos</span> or drag & drop here
+                <p className="text-xs sm:text-sm font-semibold text-stone-800 dark:text-stone-200">
+                  <span className="text-teal-800 dark:text-teal-400 underline decoration-teal-400">Click to upload photos</span> or drag & drop here
                 </p>
-                <p className="text-[11px] text-stone-500 mt-0.5">{helperText}</p>
+                <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">{helperText}</p>
               </div>
             </>
           )}
@@ -240,7 +240,7 @@ export const PhotoUploadZone: React.FC<PhotoUploadZoneProps> = ({
       {/* Thumbnails Tray */}
       {photos.length > 0 && (
         <div id={`${idPrefix}-thumbnails`} className="space-y-1.5 pt-1">
-          <p className="text-[11px] text-stone-500 italic">
+          <p className="text-[11px] text-stone-500 dark:text-stone-400 italic">
             Tip: The first photo is the main cover. Click star to make any photo the primary cover.
           </p>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
@@ -249,8 +249,8 @@ export const PhotoUploadZone: React.FC<PhotoUploadZoneProps> = ({
               return (
                 <div
                   key={`${idx}-${url.slice(-20)}`}
-                  className={`relative group rounded-xl overflow-hidden border-2 bg-stone-100 aspect-square shadow-2xs transition-all ${
-                    isPrimary ? 'border-amber-400 ring-2 ring-amber-200' : 'border-stone-200'
+                  className={`relative group rounded-xl overflow-hidden border-2 bg-stone-100 dark:bg-stone-800 aspect-square shadow-2xs transition-all ${
+                    isPrimary ? 'border-amber-400 ring-2 ring-amber-200 dark:ring-amber-800' : 'border-stone-200 dark:border-stone-700'
                   }`}
                 >
                   <img
@@ -736,7 +736,7 @@ export const AddPhotosModal: React.FC<AddPhotosModalProps> = ({
     >
       <div
         id="add-photos-modal"
-        className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col border border-stone-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        className="bg-white dark:bg-stone-900 rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col border border-stone-200 dark:border-stone-800 overflow-hidden animate-in fade-in zoom-in-95 duration-200"
       >
         <div className="bg-teal-900 text-white px-5 py-4 flex items-center justify-between">
           <div>
@@ -766,11 +766,11 @@ export const AddPhotosModal: React.FC<AddPhotosModalProps> = ({
           />
         </div>
 
-        <div className="p-4 bg-stone-50 border-t border-stone-200 flex items-center justify-end gap-2">
+        <div className="p-4 bg-stone-50 dark:bg-stone-800/80 border-t border-stone-200 dark:border-stone-700 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-200 rounded-xl"
+            className="px-4 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700 rounded-xl"
           >
             Cancel
           </button>

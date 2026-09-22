@@ -273,7 +273,7 @@ export const CaregiverCircleModal: React.FC<CaregiverCircleModalProps> = ({
     >
       <div
         id="caregiver-circle-modal-container"
-        className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[90vh]"
+        className="bg-white dark:bg-stone-900 w-full max-w-lg rounded-2xl shadow-2xl border border-stone-200 dark:border-stone-800 overflow-hidden flex flex-col max-h-[90vh]"
       >
         <div className="bg-teal-850 text-white px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -301,14 +301,14 @@ export const CaregiverCircleModal: React.FC<CaregiverCircleModalProps> = ({
 
         <div className="p-5 overflow-y-auto flex-1 space-y-4">
           {error && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-start gap-2">
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl text-xs text-rose-800 dark:text-rose-300 flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
           {success && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-start gap-2">
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
               <span>{success}</span>
             </div>
@@ -317,21 +317,21 @@ export const CaregiverCircleModal: React.FC<CaregiverCircleModalProps> = ({
           {role === 'CAREGIVER' && currentCaretaker && (
             <>
               {/* Caregiver Key Banner */}
-              <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4 flex items-center justify-between">
+              <div className="bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 rounded-2xl p-4 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-semibold text-teal-900">Your Family Caregiver Key</p>
-                  <p className="text-lg font-mono font-bold text-teal-850 tracking-wider">
+                  <p className="text-xs font-semibold text-teal-900 dark:text-teal-200">Your Family Caregiver Key</p>
+                  <p className="text-lg font-mono font-bold text-teal-850 dark:text-teal-400 tracking-wider">
                     {currentCaretaker.caregiverKey || 'CG-ACTIVE'}
                   </p>
-                  <p className="text-[11px] text-teal-700">
+                  <p className="text-[11px] text-teal-700 dark:text-teal-300">
                     Share this key with family members or loved ones so they can connect with you.
                   </p>
                 </div>
               </div>
 
               {/* Add Patient Form */}
-              <form onSubmit={handleLinkPatient} className="bg-stone-50 p-4 rounded-2xl border border-stone-200 space-y-2.5">
-                <label className="block text-xs font-semibold text-stone-800">
+              <form onSubmit={handleLinkPatient} className="bg-stone-50 dark:bg-stone-800/60 p-4 rounded-2xl border border-stone-200 dark:border-stone-700 space-y-2.5">
+                <label className="block text-xs font-semibold text-stone-800 dark:text-stone-200">
                   Add Senior by Patient Key, Mobile Number, or Username
                 </label>
                 <div className="flex gap-2">
@@ -342,7 +342,7 @@ export const CaregiverCircleModal: React.FC<CaregiverCircleModalProps> = ({
                     value={identifierInput}
                     onChange={(e) => setIdentifierInput(e.target.value)}
                     placeholder="e.g. PT-100201 or 9876543210"
-                    className="flex-1 px-3 py-2 text-sm border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-white"
+                    className="flex-1 px-3 py-2 text-sm border border-stone-300 dark:border-stone-600 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500"
                   />
                   <button
                     id="submit-link-patient-btn"
@@ -358,11 +358,11 @@ export const CaregiverCircleModal: React.FC<CaregiverCircleModalProps> = ({
 
               {/* Assigned Patients List */}
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500 mb-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-2">
                   Seniors Under Your Care ({assignedList.length})
                 </h3>
                 {assignedList.length === 0 ? (
-                  <p className="text-xs text-stone-500 italic p-3 bg-stone-50 rounded-xl border border-dashed border-stone-300 text-center">
+                  <p className="text-xs text-stone-500 dark:text-stone-400 italic p-3 bg-stone-50 dark:bg-stone-800/40 rounded-xl border border-dashed border-stone-300 dark:border-stone-700 text-center">
                     No patients currently assigned to your care circle. Add one above.
                   </p>
                 ) : (
@@ -370,11 +370,11 @@ export const CaregiverCircleModal: React.FC<CaregiverCircleModalProps> = ({
                     {assignedList.map((patient) => (
                       <div
                         key={patient.id}
-                        className="flex items-center justify-between p-3 bg-white border border-stone-200 rounded-xl shadow-2xs"
+                        className="flex items-center justify-between p-3 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl shadow-2xs"
                       >
                         <div>
-                          <p className="text-sm font-semibold text-stone-900">{patient.fullName}</p>
-                          <p className="text-xs text-stone-500">
+                          <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{patient.fullName}</p>
+                          <p className="text-xs text-stone-500 dark:text-stone-400">
                             Key: {patient.patientKey || 'PT-DEFAULT'} • Age: {patient.age}
                           </p>
                         </div>
@@ -382,7 +382,7 @@ export const CaregiverCircleModal: React.FC<CaregiverCircleModalProps> = ({
                           id={`remove-patient-btn-${patient.id}`}
                           onClick={() => handleRemovePatient(patient.id, patient.fullName)}
                           title="Remove from Care Circle"
-                          className="p-2 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                          className="p-2 text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                           <span className="sr-only">Remove</span>
@@ -396,7 +396,7 @@ export const CaregiverCircleModal: React.FC<CaregiverCircleModalProps> = ({
               {/* Pending Confirmation Requests */}
               {caregiverRequests.filter((r) => r.status === 'PENDING').length > 0 && (
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-amber-700 mb-2 flex items-center gap-1.5">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-2 flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5" />
                     <span>
                       Awaiting Patient Confirmation (
@@ -409,15 +409,15 @@ export const CaregiverCircleModal: React.FC<CaregiverCircleModalProps> = ({
                       .map((req) => (
                         <div
                           key={req.id}
-                          className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-xl"
+                          className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl"
                         >
                           <div>
-                            <p className="text-sm font-semibold text-stone-900">{req.patientName}</p>
-                            <p className="text-xs text-amber-800">
+                            <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{req.patientName}</p>
+                            <p className="text-xs text-amber-800 dark:text-amber-300">
                               Patient ID: {req.patientKey} • Request sent
                             </p>
                           </div>
-                          <span className="text-[11px] font-semibold bg-amber-200 text-amber-900 px-2.5 py-1 rounded-full">
+                          <span className="text-[11px] font-semibold bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 px-2.5 py-1 rounded-full">
                             Pending approval
                           </span>
                         </div>
@@ -433,22 +433,22 @@ export const CaregiverCircleModal: React.FC<CaregiverCircleModalProps> = ({
               {/* Incoming Requests requiring patient confirmation */}
               {patientRequests.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-amber-700 flex items-center gap-1.5">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
                     <HeartHandshake className="w-4 h-4" />
                     <span>Caregiver Connection Requests ({patientRequests.length})</span>
                   </h3>
                   {patientRequests.map((req) => (
                     <div
                       key={req.id}
-                      className="p-3 bg-amber-50 border border-amber-300 rounded-xl space-y-2"
+                      className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl space-y-2"
                     >
                       <div className="flex items-start justify-between">
                         <div>
-                          <p className="text-sm font-bold text-stone-900">{req.caretakerName}</p>
-                          <p className="text-xs text-stone-600">
+                          <p className="text-sm font-bold text-stone-900 dark:text-stone-100">{req.caretakerName}</p>
+                          <p className="text-xs text-stone-600 dark:text-stone-300">
                             {req.caretakerRelation || 'Caregiver'} • Phone: {req.caretakerPhone}
                           </p>
-                          <p className="text-[11px] text-amber-800 mt-0.5">
+                          <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5">
                             Wants to connect with you and assist with your daily routines.
                           </p>
                         </div>
@@ -465,7 +465,7 @@ export const CaregiverCircleModal: React.FC<CaregiverCircleModalProps> = ({
                         <button
                           onClick={() => handleRespondPatientRequest(req.id, 'DECLINE')}
                           disabled={loading}
-                          className="px-3 py-1.5 bg-white border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-semibold rounded-lg"
+                          className="px-3 py-1.5 bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-semibold rounded-lg"
                         >
                           Decline
                         </button>
@@ -475,38 +475,38 @@ export const CaregiverCircleModal: React.FC<CaregiverCircleModalProps> = ({
                 </div>
               )}
 
-              <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200">
-                <p className="text-xs font-semibold text-stone-800 mb-1">Your Patient Key</p>
-                <p className="text-lg font-mono font-bold text-teal-850">
+              <div className="bg-stone-50 dark:bg-stone-800/60 p-4 rounded-2xl border border-stone-200 dark:border-stone-700">
+                <p className="text-xs font-semibold text-stone-800 dark:text-stone-200 mb-1">Your Patient Key</p>
+                <p className="text-lg font-mono font-bold text-teal-850 dark:text-teal-400">
                   {currentPatient.patientKey || 'PT-DEFAULT'}
                 </p>
-                <p className="text-[11px] text-stone-500">
+                <p className="text-[11px] text-stone-500 dark:text-stone-400">
                   Share this key with your family caregiver so they can watch over your daily routines.
                 </p>
               </div>
 
               {currentPatient.hasCaregiver && currentPatient.caregiverName ? (
-                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl">
+                <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-semibold text-emerald-900">Linked Caregiver</p>
-                      <p className="text-sm font-bold text-emerald-950">{currentPatient.caregiverName}</p>
+                      <p className="text-xs font-semibold text-emerald-900 dark:text-emerald-200">Linked Caregiver</p>
+                      <p className="text-sm font-bold text-emerald-950 dark:text-emerald-100">{currentPatient.caregiverName}</p>
                       {currentPatient.caregiverPhone && (
-                        <p className="text-xs text-emerald-800">Phone: {currentPatient.caregiverPhone}</p>
+                        <p className="text-xs text-emerald-800 dark:text-emerald-300">Phone: {currentPatient.caregiverPhone}</p>
                       )}
                     </div>
                     <button
                       id="patient-unlink-caregiver-btn"
                       onClick={handlePatientUnlinkCaregiver}
-                      className="px-3 py-1.5 text-xs font-semibold bg-white text-rose-700 border border-rose-200 rounded-xl hover:bg-rose-50"
+                      className="px-3 py-1.5 text-xs font-semibold bg-white dark:bg-stone-800 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/30"
                     >
                       Unlink
                     </button>
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handlePatientLinkCaregiver} className="space-y-3 bg-stone-50 p-4 rounded-2xl border border-stone-200">
-                  <label className="block text-xs font-semibold text-stone-800">
+                <form onSubmit={handlePatientLinkCaregiver} className="space-y-3 bg-stone-50 dark:bg-stone-800/60 p-4 rounded-2xl border border-stone-200 dark:border-stone-700">
+                  <label className="block text-xs font-semibold text-stone-800 dark:text-stone-200">
                     Connect with Family Caregiver (Enter Caregiver Key)
                   </label>
                   <div className="flex gap-2">
@@ -517,7 +517,7 @@ export const CaregiverCircleModal: React.FC<CaregiverCircleModalProps> = ({
                       value={caregiverKeyInput}
                       onChange={(e) => setCaregiverKeyInput(e.target.value)}
                       placeholder="e.g. CG-ABC123"
-                      className="flex-1 px-3 py-2 text-sm border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-white"
+                      className="flex-1 px-3 py-2 text-sm border border-stone-300 dark:border-stone-600 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500"
                     />
                     <button
                       id="submit-link-caregiver-btn"

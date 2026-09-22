@@ -409,7 +409,7 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
   return (
     <div
       id="game-modal-overlay"
-      className="fixed inset-0 z-50 bg-[#FAF8F5] flex flex-col overflow-y-auto"
+      className="fixed inset-0 z-50 bg-[#FAF8F5] dark:bg-[#0D1117] flex flex-col overflow-y-auto"
     >
       {/* Header bar */}
       <div className="bg-teal-850 text-white px-4 py-3 flex items-center justify-between shadow-xs sticky top-0 z-10">
@@ -518,12 +518,12 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
         {isFinished && finalScore ? (
           <div
             id="game-completion-card"
-            className="bg-white rounded-3xl p-6 sm:p-8 shadow-md border border-stone-200 text-center w-full max-w-md animate-in fade-in zoom-in"
+            className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 shadow-md border border-stone-200 dark:border-stone-800 text-center w-full max-w-md animate-in fade-in zoom-in"
           >
-            <div className="w-16 h-16 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-300 shadow-xs">
-              <Trophy className="w-8 h-8 text-amber-800" />
+            <div className="w-16 h-16 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-300 dark:border-amber-700 shadow-xs">
+              <Trophy className="w-8 h-8 text-amber-800 dark:text-amber-400" />
             </div>
-            <h3 className="text-xl sm:text-2xl font-serif font-bold text-stone-900 mb-1">
+            <h3 className="text-xl sm:text-2xl font-serif font-bold text-stone-900 dark:text-stone-100 mb-1">
               {language === 'as'
                 ? `বৰ সুন্দৰ হ'ল, ${patient?.preferredName || 'বন্ধু'}!`
                 : language === 'hi'
@@ -532,7 +532,7 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
                 ? `য়াম্না ফরে, ${patient?.preferredName || 'মরুপ'}!`
                 : `Wonderful Job, ${patient?.preferredName || 'Friend'}!`}
             </h3>
-            <p className="text-xs sm:text-sm text-stone-600 mb-5">
+            <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400 mb-5">
               {language === 'as'
                 ? 'আপুনি এই বৌদ্ধিক খেলটো শান্তভাৱে আৰু সম্পূৰ্ণ মনোযোগেৰে সমাপ্ত কৰিলে।'
                 : language === 'hi'
@@ -542,26 +542,26 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
                 : 'You completed this cognitive exercise with calm rhythm and gentle focus.'}
             </p>
 
-            <div className="grid grid-cols-3 gap-2 bg-[#FAF8F5] p-3.5 rounded-2xl border border-stone-200 mb-6">
+            <div className="grid grid-cols-3 gap-2 bg-[#FAF8F5] dark:bg-stone-800/60 p-3.5 rounded-2xl border border-stone-200 dark:border-stone-700 mb-6">
               <div className="p-2">
-                <p className="text-[10px] text-stone-500 font-semibold uppercase">
+                <p className="text-[10px] text-stone-500 dark:text-stone-400 font-semibold uppercase">
                   {language === 'as' ? 'শুদ্ধতা' : language === 'hi' ? 'सटीकता' : language === 'mni' ? 'চুম্বা' : 'Accuracy'}
                 </p>
-                <p className="text-xl font-bold text-teal-850">{finalScore.accuracy}%</p>
+                <p className="text-xl font-bold text-teal-850 dark:text-teal-400">{finalScore.accuracy}%</p>
               </div>
               <div className="p-2">
-                <p className="text-[10px] text-stone-500 font-semibold uppercase">
+                <p className="text-[10px] text-stone-500 dark:text-stone-400 font-semibold uppercase">
                   {language === 'as' ? 'সময়' : language === 'hi' ? 'समय' : language === 'mni' ? 'মতম' : 'Time'}
                 </p>
-                <p className="text-xl font-bold text-stone-800">
+                <p className="text-xl font-bold text-stone-800 dark:text-stone-200">
                   {Math.round(finalScore.completionTimeMs / 1000)}s
                 </p>
               </div>
               <div className="p-2">
-                <p className="text-[10px] text-stone-500 font-semibold uppercase">
+                <p className="text-[10px] text-stone-500 dark:text-stone-400 font-semibold uppercase">
                   {language === 'as' ? 'ধাৰাবাহিকতা' : language === 'hi' ? 'दैनिक स्ट्रीक' : language === 'mni' ? 'লেপহৌদবা' : 'Daily Streak'}
                 </p>
-                <p className="text-xl font-bold text-amber-600">{(patient?.dailyStreak || 0) + 1}</p>
+                <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{(patient?.dailyStreak || 0) + 1}</p>
               </div>
             </div>
 
@@ -569,7 +569,7 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
               <button
                 id="finish-game-read-results-btn"
                 onClick={handleReadResultsAloud}
-                className="py-3 px-4 bg-teal-50 hover:bg-teal-100 text-teal-850 border border-teal-200 font-semibold text-xs sm:text-sm rounded-xl transition-colors flex items-center justify-center gap-1.5"
+                className="py-3 px-4 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-850 dark:text-teal-300 border border-teal-200 dark:border-teal-800 font-semibold text-xs sm:text-sm rounded-xl transition-colors flex items-center justify-center gap-1.5"
               >
                 <Volume2 className="w-4 h-4" />
                 <span>
@@ -603,7 +603,7 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
             {gameId === 'find-matching' && (
               <div className="w-full">
                 <div className="text-center mb-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-                  <p className="text-xs text-stone-600 text-left">
+                  <p className="text-xs text-stone-600 dark:text-stone-400 text-left">
                     {language === 'as'
                       ? 'যিকোনো কাৰ্ডত টিপি ফটোখন চাওক। একে ধৰণৰ বস্তুৰ জোৰা মিল কৰক।'
                       : language === 'hi'
@@ -624,7 +624,7 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
                           : 'Tap any card to reveal its image. Find its matching pair across the grid.';
                       speechService.speak(helpTxt, { force: true });
                     }}
-                    className="flex items-center gap-1 text-xs text-teal-850 font-semibold bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200 hover:bg-teal-100"
+                    className="flex items-center gap-1 text-xs text-teal-850 dark:text-teal-300 font-semibold bg-teal-50 dark:bg-teal-950/40 px-2.5 py-1 rounded-lg border border-teal-200 dark:border-teal-800 hover:bg-teal-100 dark:hover:bg-teal-900/50"
                   >
                     <Volume2 className="w-3.5 h-3.5" />
                     <span>
@@ -647,13 +647,13 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
                       onClick={() => handleCardClick(i)}
                       className={`h-28 sm:h-32 rounded-2xl flex flex-col items-center justify-between p-1.5 border-2 transition-all transform active:scale-95 shadow-2xs overflow-hidden ${
                         card.flipped || card.matched
-                          ? 'bg-amber-50 border-amber-400 text-stone-900 ring-2 ring-amber-200'
-                          : 'bg-white border-stone-300 hover:border-teal-700'
+                          ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600 text-stone-900 dark:text-stone-100 ring-2 ring-amber-200 dark:ring-amber-800'
+                          : 'bg-white dark:bg-stone-800 border-stone-300 dark:border-stone-700 hover:border-teal-700'
                       }`}
                     >
                       {card.flipped || card.matched ? (
                         <div className="flex flex-col items-center justify-between w-full h-full animate-in fade-in zoom-in">
-                          <div className="w-full h-16 sm:h-18 rounded-xl overflow-hidden bg-stone-100 relative">
+                          <div className="w-full h-16 sm:h-18 rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-700 relative">
                             <img
                               src={card.image}
                               alt={card.name}
@@ -664,19 +664,19 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
                             />
                             <span className="absolute bottom-1 right-1 text-base">{card.icon}</span>
                           </div>
-                          <span className="text-[10px] font-bold text-stone-800 text-center leading-tight truncate w-full px-0.5 mt-1">
+                          <span className="text-[10px] font-bold text-stone-800 dark:text-stone-200 text-center leading-tight truncate w-full px-0.5 mt-1">
                             {card.name}
                           </span>
-                          <span className="text-[9px] text-teal-850 truncate max-w-full">
+                          <span className="text-[9px] text-teal-850 dark:text-teal-400 truncate max-w-full">
                             {card.category}
                           </span>
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center justify-center w-full h-full text-stone-400">
-                          <div className="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-sm font-bold text-stone-500 mb-1">
+                        <div className="flex flex-col items-center justify-center w-full h-full text-stone-400 dark:text-stone-500">
+                          <div className="w-9 h-9 rounded-xl bg-stone-100 dark:bg-stone-700 border border-stone-200 dark:border-stone-600 flex items-center justify-center text-sm font-bold text-stone-500 dark:text-stone-400 mb-1">
                             ?
                           </div>
-                          <span className="text-[9px] font-semibold text-stone-400">CARD {i + 1}</span>
+                          <span className="text-[9px] font-semibold text-stone-400 dark:text-stone-500">CARD {i + 1}</span>
                         </div>
                       )}
                     </button>
@@ -689,19 +689,19 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
             {gameId === 'pattern-sequence' && (
               <div className="w-full text-center">
                 <div className="mb-4">
-                  <p className="text-xs sm:text-sm text-stone-600">
+                  <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400">
                     {isShowingSequence
                       ? 'Listen closely and watch the instruments play...'
                       : 'Now tap the traditional instruments in the harmonious order!'}
                   </p>
-                  <p className="text-xs font-semibold text-teal-850 mt-1">
+                  <p className="text-xs font-semibold text-teal-850 dark:text-teal-400 mt-1">
                     Musical Round {step} of 3
                   </p>
                 </div>
 
                 {/* Gentle retry notification banner */}
                 {gentleRetryNotice && (
-                  <div className="mb-3 px-4 py-2 bg-amber-100 border border-amber-300 text-amber-950 text-xs font-semibold rounded-2xl animate-in fade-in">
+                  <div className="mb-3 px-4 py-2 bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 text-xs font-semibold rounded-2xl animate-in fade-in">
                     {gentleRetryNotice}
                   </div>
                 )}
@@ -745,7 +745,7 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
                   <button
                     disabled={isShowingSequence}
                     onClick={() => startSequenceRound(sequence.length)}
-                    className="text-xs text-teal-850 hover:text-teal-950 font-semibold flex items-center gap-1 bg-white px-3 py-1.5 rounded-xl border border-stone-200 shadow-2xs"
+                    className="text-xs text-teal-850 dark:text-teal-300 hover:text-teal-950 dark:hover:text-teal-200 font-semibold flex items-center gap-1 bg-white dark:bg-stone-800 px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 shadow-2xs"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>Repeat Musical Melody</span>
@@ -756,9 +756,9 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
 
             {/* Game 3: Familiar Cultural Objects & Stories */}
             {gameId === 'object-familiarity' && (
-              <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-sm border border-stone-200">
+              <div className="w-full max-w-md bg-white dark:bg-stone-900 rounded-3xl p-6 shadow-sm border border-stone-200 dark:border-stone-800">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[11px] font-semibold text-teal-800 uppercase tracking-wide bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200">
+                  <span className="text-[11px] font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wide bg-teal-50 dark:bg-teal-950/40 px-2.5 py-1 rounded-full border border-teal-200 dark:border-teal-800">
                     {language === 'as'
                       ? `কাহিনী ${familiarIndex + 1} / ${FAMILIAR_QUESTIONS.length}`
                       : language === 'hi'
@@ -770,7 +770,7 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
 
                   <button
                     onClick={() => readFamiliarQuestion(familiarIndex)}
-                    className="flex items-center gap-1 text-xs text-teal-850 font-semibold bg-teal-50 hover:bg-teal-100 px-2.5 py-1 rounded-xl border border-teal-200 transition-colors"
+                    className="flex items-center gap-1 text-xs text-teal-850 dark:text-teal-300 font-semibold bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 px-2.5 py-1 rounded-xl border border-teal-200 dark:border-teal-800 transition-colors"
                   >
                     <Volume2 className="w-3.5 h-3.5" />
                     <span>
@@ -786,7 +786,7 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
                 </div>
 
                 {/* Cultural Photo for the Question */}
-                <div className="w-full h-44 rounded-2xl overflow-hidden bg-stone-100 mb-4 border border-stone-200 shadow-2xs">
+                <div className="w-full h-44 rounded-2xl overflow-hidden bg-stone-100 dark:bg-stone-800 mb-4 border border-stone-200 dark:border-stone-700 shadow-2xs">
                   <img
                     src={FAMILIAR_QUESTIONS[familiarIndex].image}
                     alt="Heritage Cultural Artifact"
@@ -794,10 +794,10 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
                   />
                 </div>
 
-                <h3 className="text-base sm:text-lg font-serif font-bold text-stone-900 mb-2 leading-snug">
+                <h3 className="text-base sm:text-lg font-serif font-bold text-stone-900 dark:text-stone-100 mb-2 leading-snug">
                   {FAMILIAR_QUESTIONS[familiarIndex].question}
                 </h3>
-                <p className="text-xs text-stone-500 mb-4">
+                <p className="text-xs text-stone-500 dark:text-stone-400 mb-4">
                   {language === 'as'
                     ? 'আপোনাৰ মন আৰু স্মৃতিৰ লগত যিটো মিলে বাছনি কৰক।'
                     : language === 'hi'
@@ -812,11 +812,11 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
                     const isSelected = selectedAnswerIdx === optIdx;
                     const isCorrect = optIdx === FAMILIAR_QUESTIONS[familiarIndex].correct;
 
-                    let btnStyle = 'border-stone-200 hover:border-teal-700 hover:bg-teal-50/50';
+                    let btnStyle = 'border-stone-200 dark:border-stone-700 hover:border-teal-700 hover:bg-teal-50/50 dark:hover:bg-teal-950/30 bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-200';
                     if (isSelected) {
                       btnStyle = isCorrect
-                        ? 'bg-emerald-50 border-emerald-500 text-emerald-950 ring-2 ring-emerald-200'
-                        : 'bg-rose-50 border-rose-400 text-rose-950 ring-2 ring-rose-200';
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-950 dark:text-emerald-200 ring-2 ring-emerald-200 dark:ring-emerald-800'
+                        : 'bg-rose-50 dark:bg-rose-950/40 border-rose-400 text-rose-950 dark:text-rose-200 ring-2 ring-rose-200 dark:ring-rose-800';
                     }
 
                     return (
@@ -825,7 +825,7 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
                         id={`familiar-opt-${optIdx}`}
                         disabled={selectedAnswerIdx !== null}
                         onClick={() => handleFamiliarAnswer(optIdx)}
-                        className={`w-full text-left p-3.5 rounded-2xl border ${btnStyle} text-xs sm:text-sm font-medium text-stone-800 transition-all flex items-center justify-between`}
+                        className={`w-full text-left p-3.5 rounded-2xl border ${btnStyle} text-xs sm:text-sm font-medium transition-all flex items-center justify-between`}
                       >
                         <span>{opt}</span>
                         {isSelected && isCorrect && (
@@ -841,7 +841,7 @@ export const Games: React.FC<GamesProps> = ({ gameId, patient, language = 'en', 
 
                 {/* Cultural Insight reveal on answer */}
                 {selectedAnswerIdx !== null && (
-                  <div className="mt-4 p-3.5 bg-amber-50 border border-amber-300 rounded-2xl text-xs text-amber-950 animate-in fade-in flex items-start gap-2">
+                  <div className="mt-4 p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 rounded-2xl text-xs text-amber-950 dark:text-amber-200 animate-in fade-in flex items-start gap-2">
                     <Sparkles className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                     <span>{FAMILIAR_QUESTIONS[familiarIndex].detail}</span>
                   </div>

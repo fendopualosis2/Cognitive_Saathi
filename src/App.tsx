@@ -91,6 +91,7 @@ export default function App() {
   const [connectivity, setConnectivity] = useState<ConnectivityStatus>('CONNECTED');
   const [language, setLanguage] = useState<LanguageCode>('en');
   const [highContrast, setHighContrast] = useState<boolean>(false);
+  const [darkMode, setDarkMode] = useState<boolean>(() => OfflineStore.getDarkMode());
   const [textScale, setTextScale] = useState<TextScale>('normal');
 
   // Modals
@@ -156,6 +157,18 @@ export default function App() {
     setActiveReadingMemoryId(null);
   };
 
+  // Synchronize Dark Mode class on HTML and BODY element
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      document.body.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark');
+    }
+    OfflineStore.setDarkMode(darkMode);
+  }, [darkMode]);
+
   // Synchronize High Contrast class on HTML element (BUG #9 FIX)
   useEffect(() => {
     if (highContrast) {
@@ -170,6 +183,9 @@ export default function App() {
   useEffect(() => {
     const savedContrast = OfflineStore.getHighContrast();
     setHighContrast(savedContrast);
+
+    const savedDarkMode = OfflineStore.getDarkMode();
+    setDarkMode(savedDarkMode);
 
     const savedScale = OfflineStore.getTextScale();
     setTextScale(savedScale);
@@ -842,7 +858,7 @@ export default function App() {
   return (
     <div
       id="cognitivesaathi-app-root"
-      className={`min-h-screen bg-[#FBF9F5] text-[#292524] flex flex-col font-sans ${
+      className={`min-h-screen bg-[#FBF9F5] dark:bg-[#0D1117] text-[#292524] dark:text-[#E6EDF3] flex flex-col font-sans transition-colors duration-200 ${
         textScale === 'large'
           ? 'text-lg'
           : textScale === 'extralarge'
@@ -863,6 +879,8 @@ export default function App() {
         }}
         highContrast={highContrast}
         onToggleHighContrast={() => setHighContrast(!highContrast)}
+        darkMode={darkMode}
+        onToggleDarkMode={() => setDarkMode(!darkMode)}
         onOpenVoiceCompanion={() => setIsVoiceModalOpen(true)}
         onEmergencyCall={handleEmergencyCall}
         onTriggerSync={handleTriggerSync}
@@ -879,7 +897,7 @@ export default function App() {
               <div
                 key={req.id}
                 id={`connection-request-card-${req.id}`}
-                className="p-4 sm:p-5 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-400 rounded-2xl shadow-sm animate-in fade-in"
+                className="p-4 sm:p-5 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 border-2 border-amber-400 dark:border-amber-600 rounded-2xl shadow-sm animate-in fade-in"
               >
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex items-start gap-3">
@@ -888,20 +906,20 @@ export default function App() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900 bg-amber-200 px-2 py-0.5 rounded-md">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900 dark:text-amber-200 bg-amber-200 dark:bg-amber-900/60 px-2 py-0.5 rounded-md">
                           Caregiver Request
                         </span>
-                        <span className="text-xs text-stone-500">
+                        <span className="text-xs text-stone-500 dark:text-stone-400">
                           {new Date(req.createdAt).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
                         </span>
                       </div>
-                      <h3 className="text-base font-bold text-stone-900 mt-1">
+                      <h3 className="text-base font-bold text-stone-900 dark:text-stone-100 mt-1">
                         Connect with {req.caretakerName}?
                       </h3>
-                      <p className="text-xs sm:text-sm text-stone-700 mt-0.5">
+                      <p className="text-xs sm:text-sm text-stone-700 dark:text-stone-300 mt-0.5">
                         <span className="font-semibold">{req.caretakerName}</span> (
                         {req.caretakerRelation || 'Caregiver'}, Phone: {req.caretakerPhone}) entered
                         your Patient ID to connect and support your daily care circle.
@@ -921,7 +939,7 @@ export default function App() {
                     <button
                       id={`decline-caregiver-req-btn-${req.id}`}
                       onClick={() => handleRespondConnectionRequest(req.id, 'DECLINE')}
-                      className="px-3.5 py-2.5 bg-white border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs sm:text-sm font-semibold rounded-xl transition-colors"
+                      className="px-3.5 py-2.5 bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs sm:text-sm font-semibold rounded-xl transition-colors"
                     >
                       Decline
                     </button>
@@ -936,13 +954,13 @@ export default function App() {
         {role === 'PATIENT' && currentPatient?.caregiverRemovalNotice && (
           <div
             id="caregiver-removal-notice-banner"
-            className="mb-4 p-4 bg-amber-50 border border-amber-300 rounded-2xl flex items-start justify-between gap-3 shadow-2xs"
+            className="mb-4 p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-2xl flex items-start justify-between gap-3 shadow-2xs"
           >
             <div className="flex items-start gap-2.5">
-              <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+              <AlertTriangle className="w-5 h-5 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-bold text-amber-900">Care Circle Update</p>
-                <p className="text-xs text-amber-800">
+                <p className="text-xs font-bold text-amber-900 dark:text-amber-200">Care Circle Update</p>
+                <p className="text-xs text-amber-800 dark:text-amber-300">
                   {currentPatient.caregiverRemovalNotice.message}
                 </p>
               </div>
@@ -958,7 +976,7 @@ export default function App() {
                   fetch(`/api/patients/${currentPatient.id}/dismiss-notice`, { method: 'POST' }).catch(() => {});
                 }
               }}
-              className="px-2.5 py-1 bg-white border border-amber-300 text-amber-900 text-xs font-semibold rounded-lg hover:bg-amber-100 shrink-0"
+              className="px-2.5 py-1 bg-white dark:bg-stone-800 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 text-xs font-semibold rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/40 shrink-0"
             >
               Acknowledge
             </button>
@@ -1010,45 +1028,45 @@ export default function App() {
 
                 {/* Quick Telemetry Cards */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <div className="bg-white p-3.5 rounded-2xl border border-stone-200 shadow-2xs">
-                    <p className="text-[11px] text-stone-500 font-semibold uppercase">Daily Streak</p>
-                    <p className="text-xl font-bold text-amber-600 mt-0.5">
+                  <div className="bg-white dark:bg-stone-900 p-3.5 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-2xs">
+                    <p className="text-[11px] text-stone-500 dark:text-stone-400 font-semibold uppercase">Daily Streak</p>
+                    <p className="text-xl font-bold text-amber-600 dark:text-amber-400 mt-0.5">
                       {currentPatient?.dailyStreak || 0} Days 🔥
                     </p>
                   </div>
-                  <div className="bg-white p-3.5 rounded-2xl border border-stone-200 shadow-2xs">
-                    <p className="text-[11px] text-stone-500 font-semibold uppercase">Completed Today</p>
-                    <p className="text-xl font-bold text-teal-850 mt-0.5">
+                  <div className="bg-white dark:bg-stone-900 p-3.5 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-2xs">
+                    <p className="text-[11px] text-stone-500 dark:text-stone-400 font-semibold uppercase">Completed Today</p>
+                    <p className="text-xl font-bold text-teal-850 dark:text-teal-400 mt-0.5">
                       {routines.filter((r) => r.completed).length} Tasks
                     </p>
                   </div>
-                  <div className="bg-white p-3.5 rounded-2xl border border-stone-200 shadow-2xs">
-                    <p className="text-[11px] text-stone-500 font-semibold uppercase">Care Circle</p>
-                    <p className="text-sm font-bold text-stone-800 mt-1 truncate">
+                  <div className="bg-white dark:bg-stone-900 p-3.5 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-2xs">
+                    <p className="text-[11px] text-stone-500 dark:text-stone-400 font-semibold uppercase">Care Circle</p>
+                    <p className="text-sm font-bold text-stone-800 dark:text-stone-200 mt-1 truncate">
                       {currentPatient?.caregiverName ||
                         (currentPatient?.hasCaregiver ? 'Caregiver Linked' : 'No Caregiver Assigned')}
                     </p>
                   </div>
-                  <div className="bg-white p-3.5 rounded-2xl border border-stone-200 shadow-2xs">
-                    <p className="text-[11px] text-stone-500 font-semibold uppercase">Patient ID</p>
-                    <p className="text-xs font-mono font-bold text-stone-700 mt-1 truncate">
+                  <div className="bg-white dark:bg-stone-900 p-3.5 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-2xs">
+                    <p className="text-[11px] text-stone-500 dark:text-stone-400 font-semibold uppercase">Patient ID</p>
+                    <p className="text-xs font-mono font-bold text-stone-700 dark:text-stone-300 mt-1 truncate">
                       {currentPatient?.patientKey || 'PT-PENDING'}
                     </p>
                   </div>
                 </div>
 
                 {/* Today's Schedule Overview */}
-                <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs">
+                <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <CalendarCheck className="w-5 h-5 text-teal-850" />
-                      <h3 className="font-serif font-bold text-base text-stone-900">
+                      <CalendarCheck className="w-5 h-5 text-teal-850 dark:text-teal-400" />
+                      <h3 className="font-serif font-bold text-base text-stone-900 dark:text-stone-100">
                         {t('today_routine')}
                       </h3>
                     </div>
                     <button
                       onClick={() => navigatePatientTab('my_day')}
-                      className="text-xs font-semibold text-teal-850 hover:underline flex items-center gap-0.5"
+                      className="text-xs font-semibold text-teal-850 dark:text-teal-400 hover:underline flex items-center gap-0.5"
                     >
                       <span>View All</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -1056,7 +1074,7 @@ export default function App() {
                   </div>
 
                   {routines.length === 0 ? (
-                    <p className="text-xs text-stone-500 italic p-4 bg-stone-50 rounded-2xl border border-dashed border-stone-300 text-center">
+                    <p className="text-xs text-stone-500 dark:text-stone-400 italic p-4 bg-stone-50 dark:bg-stone-800/50 rounded-2xl border border-dashed border-stone-300 dark:border-stone-700 text-center">
                       No routine tasks scheduled yet. Tap My Day to plan your day.
                     </p>
                   ) : (
@@ -1068,19 +1086,19 @@ export default function App() {
                           onClick={() => handleToggleRoutine(task.id)}
                           className={`flex items-center justify-between p-3 rounded-2xl border transition-colors cursor-pointer ${
                             task.completed
-                              ? 'bg-emerald-50/70 border-emerald-200 text-stone-500 line-through'
-                              : 'bg-stone-50 border-stone-200 text-stone-900 hover:bg-stone-100'
+                              ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-stone-500 dark:text-stone-400 line-through'
+                              : 'bg-stone-50 dark:bg-stone-800/80 border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-700'
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             {task.completed ? (
-                              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                             ) : (
-                              <Circle className="w-5 h-5 text-stone-400 shrink-0" />
+                              <Circle className="w-5 h-5 text-stone-400 dark:text-stone-500 shrink-0" />
                             )}
                             <div>
                               <p className="text-sm font-semibold">{task.title}</p>
-                              <p className="text-xs text-stone-500">{task.time}</p>
+                              <p className="text-xs text-stone-500 dark:text-stone-400">{task.time}</p>
                             </div>
                           </div>
                         </div>
@@ -1090,17 +1108,17 @@ export default function App() {
                 </div>
 
                 {/* Cherished Heritage Memories Preview */}
-                <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs">
+                <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <ImageIcon className="w-5 h-5 text-teal-850" />
-                      <h3 className="font-serif font-bold text-base text-stone-900">
+                      <ImageIcon className="w-5 h-5 text-teal-850 dark:text-teal-400" />
+                      <h3 className="font-serif font-bold text-base text-stone-900 dark:text-stone-100">
                         {t('family_memories')}
                       </h3>
                     </div>
                     <button
                       onClick={() => navigatePatientTab('memories')}
-                      className="text-xs font-semibold text-teal-850 hover:underline flex items-center gap-0.5"
+                      className="text-xs font-semibold text-teal-850 dark:text-teal-400 hover:underline flex items-center gap-0.5"
                     >
                       <span>Open Album</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -1108,7 +1126,7 @@ export default function App() {
                   </div>
 
                   {memories.length === 0 ? (
-                    <p className="text-xs text-stone-500 italic p-4 bg-stone-50 rounded-2xl border border-dashed border-stone-300 text-center">
+                    <p className="text-xs text-stone-500 dark:text-stone-400 italic p-4 bg-stone-50 dark:bg-stone-800/50 rounded-2xl border border-dashed border-stone-300 dark:border-stone-700 text-center">
                       Keepsake album is currently empty.
                     </p>
                   ) : (
@@ -1116,7 +1134,7 @@ export default function App() {
                       {memories.slice(0, 2).map((mem) => (
                         <div
                           key={mem.id}
-                          className="bg-stone-50 border border-stone-200 rounded-2xl overflow-hidden shadow-2xs flex flex-col"
+                          className="bg-stone-50 dark:bg-stone-800/70 border border-stone-200 dark:border-stone-700 rounded-2xl overflow-hidden shadow-2xs flex flex-col"
                         >
                           <img
                             src={mem.imageUrl}
@@ -1125,13 +1143,13 @@ export default function App() {
                             referrerPolicy="no-referrer"
                           />
                           <div className="p-3">
-                            <span className="text-[10px] font-semibold text-teal-800 uppercase tracking-wide">
+                            <span className="text-[10px] font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wide">
                               {mem.region} • {mem.category}
                             </span>
-                            <h4 className="font-serif font-bold text-sm text-stone-900 mt-0.5 truncate">
+                            <h4 className="font-serif font-bold text-sm text-stone-900 dark:text-stone-100 mt-0.5 truncate">
                               {mem.title}
                             </h4>
-                            <p className="text-xs text-stone-600 mt-1 line-clamp-2 leading-relaxed">
+                            <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 line-clamp-2 leading-relaxed">
                               {mem.story}
                             </p>
                           </div>
@@ -1148,15 +1166,15 @@ export default function App() {
               <div id="patient-activities-view" className="space-y-4 animate-in fade-in">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <h2 className="text-xl font-serif font-bold text-stone-900">
+                    <h2 className="text-xl font-serif font-bold text-stone-900 dark:text-stone-100">
                       {t('activities_title')}
                     </h2>
-                    <p className="text-xs text-stone-600">
+                    <p className="text-xs text-stone-600 dark:text-stone-400">
                       Gentle cognitive exercises designed with clear layouts, simple objects, and audio cues.
                     </p>
                   </div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-300 text-amber-950 rounded-xl text-xs font-semibold self-start sm:self-auto">
-                    <Volume2 className="w-3.5 h-3.5 text-amber-700" />
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-200 rounded-xl text-xs font-semibold self-start sm:self-auto">
+                    <Volume2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                     <span>Voice Assistance on Request</span>
                   </div>
                 </div>
@@ -1166,7 +1184,7 @@ export default function App() {
                   <div
                     id="game-card-memory-tiles"
                     onClick={() => openGame('memory-tiles')}
-                    className="sm:col-span-2 bg-gradient-to-br from-white via-amber-50/40 to-amber-100/50 rounded-3xl p-5 sm:p-6 border-2 border-amber-300 shadow-xs hover:border-amber-500 hover:shadow-sm transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                    className="sm:col-span-2 bg-gradient-to-br from-white via-amber-50/40 to-amber-100/50 dark:from-stone-900 dark:via-stone-900/90 dark:to-amber-950/30 rounded-3xl p-5 sm:p-6 border-2 border-amber-300 dark:border-amber-700/70 shadow-xs hover:border-amber-500 hover:shadow-sm transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
                   >
                     <div className="flex items-start gap-3.5">
                       <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-300 to-amber-400 text-teal-950 flex items-center justify-center text-3xl shrink-0 shadow-2xs">
@@ -1174,20 +1192,20 @@ export default function App() {
                       </div>
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-200 text-amber-950 px-2.5 py-0.5 rounded-full border border-amber-300">
+                          <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-200 dark:bg-amber-900/60 text-amber-950 dark:text-amber-200 px-2.5 py-0.5 rounded-full border border-amber-300 dark:border-amber-700">
                             Turn-Based Visual Recall
                           </span>
-                          <span className="text-[10px] font-bold text-teal-850 bg-teal-100 px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] font-bold text-teal-850 dark:text-teal-300 bg-teal-100 dark:bg-teal-950/60 px-2 py-0.5 rounded-full border border-teal-200 dark:border-teal-800">
                             2×2 • 3×4 • 4×4 Grids
                           </span>
-                          <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-300 px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 px-2 py-0.5 rounded-full">
                             Simple Everyday Objects
                           </span>
                         </div>
-                        <h3 className="font-serif font-bold text-lg sm:text-xl text-stone-900 mt-1">
+                        <h3 className="font-serif font-bold text-lg sm:text-xl text-stone-900 dark:text-stone-100 mt-1">
                           Memory Tiles (Everyday Objects)
                         </h3>
-                        <p className="text-xs sm:text-sm text-stone-600 mt-1 leading-relaxed max-w-xl">
+                        <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400 mt-1 leading-relaxed max-w-xl">
                           Uncover and pair identical everyday objects (clock, apple, tea mug, key, camera, shoes) hidden beneath face-down tiles in the fewest moves. Configurable flip delay and voice prompts on demand.
                         </p>
                       </div>
@@ -1204,7 +1222,7 @@ export default function App() {
                   <div
                     id="game-card-recognize-by-description"
                     onClick={() => openGame('recognize-by-description')}
-                    className="sm:col-span-2 bg-gradient-to-br from-teal-50/70 via-white to-emerald-50/50 rounded-3xl p-5 sm:p-6 border-2 border-teal-300 shadow-xs hover:border-teal-500 hover:shadow-sm transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                    className="sm:col-span-2 bg-gradient-to-br from-teal-50/70 via-white to-emerald-50/50 dark:from-teal-950/40 dark:via-stone-900 dark:to-emerald-950/30 rounded-3xl p-5 sm:p-6 border-2 border-teal-300 dark:border-teal-700/70 shadow-xs hover:border-teal-500 hover:shadow-sm transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
                   >
                     <div className="flex items-start gap-3.5">
                       <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-600 to-teal-800 text-white flex items-center justify-center text-3xl shrink-0 shadow-2xs">
@@ -1212,20 +1230,20 @@ export default function App() {
                       </div>
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider bg-teal-200 text-teal-950 px-2.5 py-0.5 rounded-full border border-teal-300">
+                          <span className="text-[10px] font-bold uppercase tracking-wider bg-teal-200 dark:bg-teal-900/60 text-teal-950 dark:text-teal-200 px-2.5 py-0.5 rounded-full border border-teal-300 dark:border-teal-700">
                             Description Matching
                           </span>
-                          <span className="text-[10px] font-bold text-teal-850 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] font-bold text-teal-850 dark:text-teal-300 bg-amber-100 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 px-2 py-0.5 rounded-full">
                             🔊 Read-Aloud Voiceover
                           </span>
-                          <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
                             Authentic Audio Cues
                           </span>
                         </div>
-                        <h3 className="font-serif font-bold text-lg sm:text-xl text-stone-900 mt-1">
+                        <h3 className="font-serif font-bold text-lg sm:text-xl text-stone-900 dark:text-stone-100 mt-1">
                           Heritage Clues & Object Recognition
                         </h3>
-                        <p className="text-xs sm:text-sm text-stone-600 mt-1 leading-relaxed max-w-xl">
+                        <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400 mt-1 leading-relaxed max-w-xl">
                           Listen or read vivid heritage clues about traditional instruments (Pepa, Dhol, Flute), sacred bell metal crafts, and regional treasures, then identify the matching cultural object.
                         </p>
                       </div>
@@ -1244,8 +1262,8 @@ export default function App() {
                     onClick={() => openGame('personal-memory-quiz')}
                     className={`sm:col-span-2 rounded-3xl p-5 sm:p-6 border-2 transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
                       (memories.length + people.length) > 0
-                        ? 'bg-gradient-to-br from-amber-50/80 via-white to-orange-50/50 border-amber-300 shadow-xs hover:border-amber-500 hover:shadow-sm'
-                        : 'bg-stone-100/90 border-dashed border-stone-300 opacity-90 hover:bg-stone-100'
+                        ? 'bg-gradient-to-br from-amber-50/80 via-white to-orange-50/50 dark:from-amber-950/40 dark:via-stone-900 dark:to-orange-950/30 border-amber-300 dark:border-amber-700/70 shadow-xs hover:border-amber-500 hover:shadow-sm'
+                        : 'bg-stone-100/90 dark:bg-stone-900/80 border-dashed border-stone-300 dark:border-stone-700 opacity-90 hover:bg-stone-100 dark:hover:bg-stone-800'
                     }`}
                   >
                     <div className="flex items-start gap-3.5">
@@ -1253,7 +1271,7 @@ export default function App() {
                         className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 shadow-2xs ${
                           (memories.length + people.length) > 0
                             ? 'bg-gradient-to-br from-amber-400 to-amber-500 text-stone-950'
-                            : 'bg-stone-300 text-stone-600'
+                            : 'bg-stone-300 dark:bg-stone-800 text-stone-600 dark:text-stone-400'
                         }`}
                       >
                         {(memories.length + people.length) > 0 ? '📖' : '🔒'}
@@ -1262,26 +1280,26 @@ export default function App() {
                         <div className="flex flex-wrap items-center gap-2">
                           {(memories.length + people.length) > 0 ? (
                             <>
-                              <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-950 px-2.5 py-0.5 rounded-full border border-amber-300">
+                              <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/60 text-amber-950 dark:text-amber-200 px-2.5 py-0.5 rounded-full border border-amber-300 dark:border-amber-800">
                                 AI Life Reminiscence
                               </span>
-                              <span className="text-[10px] font-semibold bg-teal-100 text-teal-850 px-2 py-0.5 rounded-full">
+                              <span className="text-[10px] font-semibold bg-teal-100 dark:bg-teal-950/60 text-teal-850 dark:text-teal-300 px-2 py-0.5 rounded-full border border-teal-200 dark:border-teal-800">
                                 {people.length} Loved Ones • {memories.length} Memories
                               </span>
-                              <span className="text-[10px] font-bold text-amber-900 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded-full">
+                              <span className="text-[10px] font-bold text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 px-2 py-0.5 rounded-full">
                                 4-Choice Recall
                               </span>
                             </>
                           ) : (
-                            <span className="text-[10px] font-bold uppercase tracking-wider bg-stone-200 text-stone-700 px-2.5 py-0.5 rounded-full">
+                            <span className="text-[10px] font-bold uppercase tracking-wider bg-stone-200 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-2.5 py-0.5 rounded-full">
                               Awaiting Memories & Loved Ones
                             </span>
                           )}
                         </div>
-                        <h3 className="font-serif font-bold text-lg sm:text-xl text-stone-900 mt-1">
+                        <h3 className="font-serif font-bold text-lg sm:text-xl text-stone-900 dark:text-stone-100 mt-1">
                           Personal Memories & Loved Ones Quiz
                         </h3>
-                        <p className="text-xs sm:text-sm text-stone-600 mt-1 leading-relaxed max-w-xl">
+                        <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400 mt-1 leading-relaxed max-w-xl">
                           {(memories.length + people.length) > 0
                             ? 'Answer gentle 4-choice questions about your family members, loved ones, and life scenarios generated directly by AI from your personal memories.'
                             : 'This personalized game is currently blank because no memories or loved ones have been added in your Memories tab yet. Add family members or life stories to unlock!'}
@@ -1308,9 +1326,9 @@ export default function App() {
                             e.stopPropagation();
                             navigatePatientTab('memories');
                           }}
-                          className="w-full sm:w-auto px-4 py-2.5 bg-stone-200 hover:bg-stone-300 text-stone-800 font-semibold text-xs rounded-xl shadow-xs whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5"
+                          className="w-full sm:w-auto px-4 py-2.5 bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 font-semibold text-xs rounded-xl shadow-xs whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5"
                         >
-                          <BookOpen className="w-3.5 h-3.5 text-stone-600" />
+                          <BookOpen className="w-3.5 h-3.5 text-stone-600 dark:text-stone-400" />
                           <span>Add in Memories Tab</span>
                         </button>
                       )}
@@ -1318,9 +1336,9 @@ export default function App() {
                   </div>
 
                   {currentPatient?.hasCaregiver && (
-                    <div className="sm:col-span-2 bg-teal-50 border border-teal-200 rounded-2xl p-3 flex items-center justify-between text-xs text-teal-900">
+                    <div className="sm:col-span-2 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 rounded-2xl p-3 flex items-center justify-between text-xs text-teal-900 dark:text-teal-200">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-teal-700 shrink-0" />
+                        <Sparkles className="w-4 h-4 text-teal-700 dark:text-teal-400 shrink-0" />
                         <span>
                           Your play frequency, accuracy, and daily streaks are gently shared with your caregiver{' '}
                           <strong>{currentPatient.caregiverName || 'Circle'}</strong>.
@@ -1332,19 +1350,19 @@ export default function App() {
                   <div
                     id="game-card-find-matching"
                     onClick={() => openGame('find-matching')}
-                    className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs hover:border-teal-700 hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
+                    className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs hover:border-teal-700 dark:hover:border-teal-600 hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
                   >
                     <div>
                       <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-2xl mb-3 border border-amber-300">
                         🍎
                       </div>
-                      <span className="text-[10px] font-semibold text-teal-800 uppercase tracking-wider bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+                      <span className="text-[10px] font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider bg-teal-50 dark:bg-teal-950/60 px-2 py-0.5 rounded-full border border-teal-200 dark:border-teal-800">
                         Visual Memory • Pairs
                       </span>
-                      <h3 className="font-serif font-bold text-base text-stone-900 mt-2">
+                      <h3 className="font-serif font-bold text-base text-stone-900 dark:text-stone-100 mt-2">
                         Object Memory Match
                       </h3>
-                      <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                      <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">
                         Match pairs of familiar everyday objects like clock, key, and coffee cup.
                       </p>
                     </div>
@@ -1363,19 +1381,19 @@ export default function App() {
                   <div
                     id="game-card-pattern-sequence"
                     onClick={() => openGame('pattern-sequence')}
-                    className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs hover:border-teal-700 hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
+                    className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs hover:border-teal-700 dark:hover:border-teal-600 hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
                   >
                     <div>
                       <div className="w-12 h-12 rounded-2xl bg-teal-100 text-teal-850 flex items-center justify-center text-2xl mb-3 border border-teal-300">
                         🎵
                       </div>
-                      <span className="text-[10px] font-semibold text-teal-800 uppercase tracking-wider bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+                      <span className="text-[10px] font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider bg-teal-50 dark:bg-teal-950/60 px-2 py-0.5 rounded-full border border-teal-200 dark:border-teal-800">
                         2×2 & 3×3 Modes • High Scores
                       </span>
-                      <h3 className="font-serif font-bold text-base text-stone-900 mt-2">
+                      <h3 className="font-serif font-bold text-base text-stone-900 dark:text-stone-100 mt-2">
                         Music Pattern Game
                       </h3>
-                      <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                      <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">
                         Follow the musical melody as tempo quickens each round until a note is missed. Play 2×2 or 3×3 grids to set high scores!
                       </p>
                     </div>
@@ -1394,19 +1412,19 @@ export default function App() {
                   <div
                     id="game-card-object-familiarity"
                     onClick={() => openGame('object-familiarity')}
-                    className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs hover:border-teal-700 hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
+                    className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs hover:border-teal-700 dark:hover:border-teal-600 hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
                   >
                     <div>
                       <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-800 flex items-center justify-center text-2xl mb-3 border border-rose-300">
                         🪷
                       </div>
-                      <span className="text-[10px] font-semibold text-teal-800 uppercase tracking-wider bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+                      <span className="text-[10px] font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wider bg-teal-50 dark:bg-teal-950/60 px-2 py-0.5 rounded-full border border-teal-200 dark:border-teal-800">
                         Cultural Reminiscence
                       </span>
-                      <h3 className="font-serif font-bold text-base text-stone-900 mt-2">
+                      <h3 className="font-serif font-bold text-base text-stone-900 dark:text-stone-100 mt-2">
                         Familiar Objects & Stories
                       </h3>
-                      <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                      <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">
                         Identify treasured heritage crafts, bell metal utensils, and family celebrations.
                       </p>
                     </div>
@@ -1429,24 +1447,24 @@ export default function App() {
             {patientTab === 'my_day' && (
               <div id="patient-my-day-view" className="space-y-4 animate-in fade-in">
                 <div>
-                  <h2 className="text-xl font-serif font-bold text-stone-900">
+                  <h2 className="text-xl font-serif font-bold text-stone-900 dark:text-stone-100">
                     {t('my_day_title')}
                   </h2>
-                  <p className="text-xs text-stone-600">
+                  <p className="text-xs text-stone-600 dark:text-stone-400">
                     Gentle, predictable routines bring comfort and peace to each day.
                   </p>
                 </div>
 
-                <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs">
+                <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-serif font-bold text-stone-900">
+                    <h3 className="text-sm font-serif font-bold text-stone-900 dark:text-stone-100">
                       Daily Routine Tasks ({routines.filter((r) => r.completed).length} of{' '}
                       {routines.length})
                     </h3>
                   </div>
 
                   {routines.length === 0 ? (
-                    <div className="text-center py-6 text-xs text-stone-500">
+                    <div className="text-center py-6 text-xs text-stone-500 dark:text-stone-400">
                       No routine tasks scheduled for today.
                     </div>
                   ) : (
@@ -1457,8 +1475,8 @@ export default function App() {
                           id={`my-day-routine-${task.id}`}
                           className={`flex items-center justify-between p-3.5 rounded-2xl border transition-colors ${
                             task.completed
-                              ? 'bg-emerald-50/70 border-emerald-200 text-stone-500 line-through'
-                              : 'bg-stone-50 border-stone-200 text-stone-900'
+                              ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-stone-500 dark:text-stone-400 line-through'
+                              : 'bg-stone-50 dark:bg-stone-800/80 border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100'
                           }`}
                         >
                           <div
@@ -1466,24 +1484,24 @@ export default function App() {
                             className="flex items-center gap-3 flex-1 cursor-pointer"
                           >
                             {task.completed ? (
-                              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                             ) : (
-                              <Circle className="w-5 h-5 text-stone-400 shrink-0" />
+                              <Circle className="w-5 h-5 text-stone-400 dark:text-stone-500 shrink-0" />
                             )}
                             <div>
                               <p className="text-sm font-semibold">{task.title}</p>
-                              <p className="text-xs text-stone-500">
+                              <p className="text-xs text-stone-500 dark:text-stone-400">
                                 {task.timeSlot} • {task.time}
                               </p>
                               {task.notes && (
-                                <p className="text-xs text-teal-800 mt-0.5">{task.notes}</p>
+                                <p className="text-xs text-teal-800 dark:text-teal-300 mt-0.5">{task.notes}</p>
                               )}
                             </div>
                           </div>
                           <button
                             id={`delete-routine-btn-${task.id}`}
                             onClick={() => handleDeleteRoutine(task.id)}
-                            className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                            className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg"
                           >
                             <Trash2 className="w-4 h-4" />
                             <span className="sr-only">Delete</span>
@@ -1497,9 +1515,9 @@ export default function App() {
                 {/* Add Routine Form */}
                 <form
                   onSubmit={handleAddRoutine}
-                  className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs space-y-3"
+                  className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-3"
                 >
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
                     Add a New Routine Task
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -1510,7 +1528,7 @@ export default function App() {
                       value={newRoutineTitle}
                       onChange={(e) => setNewRoutineTitle(e.target.value)}
                       placeholder="e.g. Afternoon Tea with Family"
-                      className="px-3 py-2 text-xs border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 sm:col-span-2"
+                      className="px-3 py-2 text-xs border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 sm:col-span-2"
                     />
                     <input
                       id="new-routine-time-input"
@@ -1518,7 +1536,7 @@ export default function App() {
                       value={newRoutineTime}
                       onChange={(e) => setNewRoutineTime(e.target.value)}
                       placeholder="04:00 PM"
-                      className="px-3 py-2 text-xs border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50"
+                      className="px-3 py-2 text-xs border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100"
                     />
                   </div>
                   <button
@@ -1532,15 +1550,15 @@ export default function App() {
                 </form>
 
                 {/* Medication & Hydration Reminders */}
-                <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs">
+                <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-serif font-bold text-stone-900">
+                    <h3 className="text-sm font-serif font-bold text-stone-900 dark:text-stone-100">
                       Medicine & Hydration Schedule
                     </h3>
                   </div>
 
                   {reminders.length === 0 ? (
-                    <div className="text-center py-6 text-xs text-stone-500">
+                    <div className="text-center py-6 text-xs text-stone-500 dark:text-stone-400">
                       No medication or hydration reminders logged.
                     </div>
                   ) : (
@@ -1551,8 +1569,8 @@ export default function App() {
                           id={`my-day-reminder-${rem.id}`}
                           className={`flex items-center justify-between p-3.5 rounded-2xl border transition-colors ${
                             rem.completedToday
-                              ? 'bg-emerald-50/70 border-emerald-200 text-stone-500 line-through'
-                              : 'bg-stone-50 border-stone-200 text-stone-900'
+                              ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-stone-500 dark:text-stone-400 line-through'
+                              : 'bg-stone-50 dark:bg-stone-800/80 border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100'
                           }`}
                         >
                           <div
@@ -1560,13 +1578,13 @@ export default function App() {
                             className="flex items-center gap-3 flex-1 cursor-pointer"
                           >
                             {rem.completedToday ? (
-                              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                             ) : (
-                              <Circle className="w-5 h-5 text-stone-400 shrink-0" />
+                              <Circle className="w-5 h-5 text-stone-400 dark:text-stone-500 shrink-0" />
                             )}
                             <div>
                               <p className="text-sm font-semibold">{rem.title}</p>
-                              <p className="text-xs text-stone-500">
+                              <p className="text-xs text-stone-500 dark:text-stone-400">
                                 {rem.time} • {rem.description}
                               </p>
                             </div>
@@ -1574,7 +1592,7 @@ export default function App() {
                           <button
                             id={`delete-reminder-btn-${rem.id}`}
                             onClick={() => handleDeleteReminder(rem.id)}
-                            className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                            className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg"
                           >
                             <Trash2 className="w-4 h-4" />
                             <span className="sr-only">Delete</span>
@@ -1588,9 +1606,9 @@ export default function App() {
                 {/* Add Reminder Form */}
                 <form
                   onSubmit={handleAddReminder}
-                  className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs space-y-3"
+                  className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-3"
                 >
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
                     Add a New Medication or Hydration Reminder
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -1601,7 +1619,7 @@ export default function App() {
                       value={newReminderTitle}
                       onChange={(e) => setNewReminderTitle(e.target.value)}
                       placeholder="e.g. Afternoon Water Cup"
-                      className="px-3 py-2 text-xs border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 sm:col-span-2"
+                      className="px-3 py-2 text-xs border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 sm:col-span-2"
                     />
                     <input
                       id="new-reminder-time-input"
@@ -1609,7 +1627,7 @@ export default function App() {
                       value={newReminderTime}
                       onChange={(e) => setNewReminderTime(e.target.value)}
                       placeholder="02:30 PM"
-                      className="px-3 py-2 text-xs border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50"
+                      className="px-3 py-2 text-xs border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100"
                     />
                   </div>
                   <button
@@ -1628,7 +1646,7 @@ export default function App() {
             {patientTab === 'memories' && (
               <div id="patient-memories-view" className="space-y-4 animate-in fade-in">
                 {/* Two Separate Sub-Tabs: Memories vs People in Life */}
-                <div className="flex items-center gap-1.5 p-1.5 bg-stone-200/80 rounded-2xl border border-stone-200 w-full sm:w-fit">
+                <div className="flex items-center gap-1.5 p-1.5 bg-stone-200/80 dark:bg-stone-800/80 rounded-2xl border border-stone-200 dark:border-stone-700 w-full sm:w-fit">
                   <button
                     id="patient-subtab-memories-btn"
                     type="button"
@@ -1636,7 +1654,7 @@ export default function App() {
                     className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-bold transition-all ${
                       memorySubTab === 'memories'
                         ? 'bg-teal-850 text-white shadow-xs'
-                        : 'text-stone-600 hover:text-stone-950 hover:bg-white/60'
+                        : 'text-stone-600 dark:text-stone-300 hover:text-stone-950 dark:hover:text-white hover:bg-white/60 dark:hover:bg-stone-700/60'
                     }`}
                   >
                     <BookOpen className="w-4 h-4" />
@@ -1650,7 +1668,7 @@ export default function App() {
                     className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-bold transition-all ${
                       memorySubTab === 'people'
                         ? 'bg-teal-850 text-white shadow-xs'
-                        : 'text-stone-600 hover:text-stone-950 hover:bg-white/60'
+                        : 'text-stone-600 dark:text-stone-300 hover:text-stone-950 dark:hover:text-white hover:bg-white/60 dark:hover:bg-stone-700/60'
                     }`}
                   >
                     <Users className="w-4 h-4" />
@@ -1689,13 +1707,13 @@ export default function App() {
                     </div>
 
                     {memories.length === 0 ? (
-                      <div className="bg-white rounded-3xl p-8 border border-stone-200 text-center shadow-2xs space-y-3">
-                        <div className="w-14 h-14 mx-auto rounded-full bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-800">
+                      <div className="bg-white dark:bg-stone-900 rounded-3xl p-8 border border-stone-200 dark:border-stone-800 text-center shadow-2xs space-y-3">
+                        <div className="w-14 h-14 mx-auto rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 flex items-center justify-center text-teal-800 dark:text-teal-300">
                           <BookOpen className="w-7 h-7" />
                         </div>
                         <div className="max-w-md mx-auto space-y-1">
-                          <h3 className="font-serif font-bold text-base text-stone-900">No Memories Added Yet</h3>
-                          <p className="text-xs text-stone-600">
+                          <h3 className="font-serif font-bold text-base text-stone-900 dark:text-stone-100">No Memories Added Yet</h3>
+                          <p className="text-xs text-stone-600 dark:text-stone-400">
                             Record cherished moments, cultural festivals, and family stories below to keep your precious memories alive.
                           </p>
                         </div>
@@ -1707,10 +1725,10 @@ export default function App() {
                           return (
                             <div
                               key={mem.id}
-                              className={`bg-white rounded-3xl border overflow-hidden shadow-2xs flex flex-col transition-all ${
+                              className={`bg-white dark:bg-stone-900 rounded-3xl border overflow-hidden shadow-2xs flex flex-col transition-all ${
                                 isReading
                                   ? 'border-amber-400 ring-2 ring-amber-300/60 shadow-md'
-                                  : 'border-stone-200'
+                                  : 'border-stone-200 dark:border-stone-800'
                               }`}
                             >
                               <MemoryCardPhotoGallery
@@ -1728,17 +1746,17 @@ export default function App() {
                               <div className="p-4 flex-1 flex flex-col justify-between">
                                 <div>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-semibold text-teal-800 uppercase tracking-wide bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+                                    <span className="text-[10px] font-semibold text-teal-800 dark:text-teal-300 uppercase tracking-wide bg-teal-50 dark:bg-teal-950/60 px-2 py-0.5 rounded-full border border-teal-200 dark:border-teal-800">
                                       {mem.region} • {mem.category}
                                     </span>
-                                    <span className="text-xs text-stone-400">{mem.dateLabel}</span>
+                                    <span className="text-xs text-stone-400 dark:text-stone-500">{mem.dateLabel}</span>
                                   </div>
-                                  <h3 className="font-serif font-bold text-base text-stone-900 mt-2">
+                                  <h3 className="font-serif font-bold text-base text-stone-900 dark:text-stone-100 mt-2">
                                     {mem.title}
                                   </h3>
-                                  <p className="text-xs text-stone-600 mt-1 leading-relaxed">{mem.story}</p>
+                                  <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">{mem.story}</p>
                                   {mem.voiceNoteAudioUrl && (
-                                    <div className="mt-2.5 pt-2 border-t border-stone-100 flex items-center gap-2">
+                                    <div className="mt-2.5 pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center gap-2">
                                       <audio
                                         controls
                                         src={mem.voiceNoteAudioUrl}
@@ -1748,7 +1766,7 @@ export default function App() {
                                   )}
                                 </div>
 
-                                <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+                                <div className="mt-4 pt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between gap-2">
                                   <MemoryVoiceReaderButton
                                     memory={mem}
                                     activeReadingId={activeReadingMemoryId}
@@ -1773,17 +1791,17 @@ export default function App() {
                     )}
 
                     {/* Add Memory Form */}
-                    <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs space-y-4">
+                    <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-4">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
                           Add a Cherished Keepsake Memory
                         </h4>
                         <button
                           type="button"
                           onClick={() => setIsVoiceNoteModalOpen(true)}
-                          className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-full text-xs font-semibold text-teal-950 transition-colors shadow-2xs"
+                          className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 border border-amber-300 dark:border-amber-700 rounded-full text-xs font-semibold text-teal-950 dark:text-amber-200 transition-colors shadow-2xs"
                         >
-                          <Mic className="w-3.5 h-3.5 text-rose-600" />
+                          <Mic className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
                           <span>Record Voice Note with AI</span>
                         </button>
                       </div>
@@ -1797,13 +1815,13 @@ export default function App() {
                             value={newMemoryTitle}
                             onChange={(e) => setNewMemoryTitle(e.target.value)}
                             placeholder="Title (e.g. Rongali Bihu Morning)"
-                            className="px-3 py-2 text-xs border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50"
+                            className="px-3 py-2 text-xs border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100"
                           />
                           <select
                             id="new-memory-region-select"
                             value={newMemoryRegion}
                             onChange={(e) => setNewMemoryRegion(e.target.value)}
-                            className="px-3 py-2 text-xs border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50"
+                            className="px-3 py-2 text-xs border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100"
                           >
                             <option value="Assam">Assam</option>
                             <option value="Manipur">Manipur</option>
@@ -1818,7 +1836,7 @@ export default function App() {
                           value={newMemoryStory}
                           onChange={(e) => setNewMemoryStory(e.target.value)}
                           placeholder="Short comforting description of what happened..."
-                          className="w-full px-3 py-2 text-xs border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50"
+                          className="w-full px-3 py-2 text-xs border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100"
                         />
                         <PhotoUploadZone
                           photos={newMemoryPhotos}
@@ -1857,48 +1875,48 @@ export default function App() {
             {patientTab === 'me' && (
               <div id="patient-profile-view" className="space-y-4 animate-in fade-in">
                 <div>
-                  <h2 className="text-xl font-serif font-bold text-stone-900">{t('me_title')}</h2>
-                  <p className="text-xs text-stone-600">
+                  <h2 className="text-xl font-serif font-bold text-stone-900 dark:text-stone-100">{t('me_title')}</h2>
+                  <p className="text-xs text-stone-600 dark:text-stone-400">
                     Your personal information and connected family circle.
                   </p>
                 </div>
 
-                <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs space-y-4">
+                <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="w-14 h-14 rounded-full bg-teal-850 text-amber-300 font-serif font-bold text-xl flex items-center justify-center border-2 border-teal-700">
                       {currentPatient?.preferredName?.charAt(0) || 'P'}
                     </div>
                     <div>
-                      <h3 className="font-serif font-bold text-lg text-stone-900">
+                      <h3 className="font-serif font-bold text-lg text-stone-900 dark:text-stone-100">
                         {currentPatient?.fullName}
                       </h3>
-                      <p className="text-xs text-stone-500">
+                      <p className="text-xs text-stone-500 dark:text-stone-400">
                         Age: {currentPatient?.age} • {currentPatient?.region || 'Assam'}
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-stone-100">
-                    <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200">
-                      <p className="text-[10px] uppercase font-bold text-stone-500">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-stone-100 dark:border-stone-800">
+                    <div className="p-3 bg-stone-50 dark:bg-stone-800/80 rounded-2xl border border-stone-200 dark:border-stone-700">
+                      <p className="text-[10px] uppercase font-bold text-stone-500 dark:text-stone-400">
                         Your Patient Key
                       </p>
-                      <p className="text-sm font-mono font-bold text-teal-850 mt-0.5">
+                      <p className="text-sm font-mono font-bold text-teal-850 dark:text-teal-300 mt-0.5">
                         {currentPatient?.patientKey || 'PT-DEFAULT'}
                       </p>
-                      <p className="text-[11px] text-stone-500 mt-1">
+                      <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-1">
                         Give this key to your caregiver to connect.
                       </p>
                     </div>
 
-                    <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200">
-                      <p className="text-[10px] uppercase font-bold text-stone-500">
+                    <div className="p-3 bg-stone-50 dark:bg-stone-800/80 rounded-2xl border border-stone-200 dark:border-stone-700">
+                      <p className="text-[10px] uppercase font-bold text-stone-500 dark:text-stone-400">
                         Linked Family Caregiver
                       </p>
-                      <p className="text-sm font-bold text-stone-800 mt-0.5">
+                      <p className="text-sm font-bold text-stone-800 dark:text-stone-200 mt-0.5">
                         {currentPatient?.caregiverName || 'Self-Care Mode'}
                       </p>
-                      <p className="text-[11px] text-stone-500 mt-1">
+                      <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-1">
                         {currentPatient?.caregiverPhone ? `Phone: ${currentPatient.caregiverPhone}` : 'No phone connected'}
                       </p>
                     </div>
@@ -1929,20 +1947,20 @@ export default function App() {
             {patientTab === 'settings' && (
               <div id="patient-settings-view" className="space-y-4 animate-in fade-in">
                 <div>
-                  <h2 className="text-xl font-serif font-bold text-stone-900">
+                  <h2 className="text-xl font-serif font-bold text-stone-900 dark:text-stone-100">
                     {t('settings_title')}
                   </h2>
-                  <p className="text-xs text-stone-600">
+                  <p className="text-xs text-stone-600 dark:text-stone-400">
                     Adjust text size, contrast, and language for maximum visual comfort.
                   </p>
                 </div>
 
-                <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs space-y-4">
+                <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-4">
                   {/* High Contrast */}
-                  <div className="flex items-center justify-between p-3 bg-stone-50 rounded-2xl border border-stone-200">
+                  <div className="flex items-center justify-between p-3 bg-stone-50 dark:bg-stone-800/80 rounded-2xl border border-stone-200 dark:border-stone-700">
                     <div>
-                      <h4 className="text-sm font-semibold text-stone-900">{t('high_contrast')}</h4>
-                      <p className="text-xs text-stone-500">
+                      <h4 className="text-sm font-semibold text-stone-900 dark:text-stone-100">{t('high_contrast')}</h4>
+                      <p className="text-xs text-stone-500 dark:text-stone-400">
                         Increases clarity with pure high contrast borders.
                       </p>
                     </div>
@@ -1951,8 +1969,8 @@ export default function App() {
                       onClick={() => setHighContrast(!highContrast)}
                       className={`px-3 py-1.5 rounded-xl font-bold text-xs border ${
                         highContrast
-                          ? 'bg-stone-900 text-white border-stone-900'
-                          : 'bg-white text-stone-700 border-stone-300'
+                          ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 border-stone-900 dark:border-stone-100'
+                          : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 border-stone-300 dark:border-stone-700'
                       }`}
                     >
                       {highContrast ? 'Enabled' : 'Disabled'}
@@ -1960,8 +1978,8 @@ export default function App() {
                   </div>
 
                   {/* Text Scale */}
-                  <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 space-y-2">
-                    <h4 className="text-sm font-semibold text-stone-900">{t('large_text')}</h4>
+                  <div className="p-3 bg-stone-50 dark:bg-stone-800/80 rounded-2xl border border-stone-200 dark:border-stone-700 space-y-2">
+                    <h4 className="text-sm font-semibold text-stone-900 dark:text-stone-100">{t('large_text')}</h4>
                     <div className="flex gap-2">
                       {(['normal', 'large', 'extralarge'] as TextScale[]).map((scale) => (
                         <button
@@ -1974,7 +1992,7 @@ export default function App() {
                           className={`flex-1 py-1.5 rounded-xl text-xs font-semibold capitalize border ${
                             textScale === scale
                               ? 'bg-teal-850 text-white border-teal-850'
-                              : 'bg-white text-stone-700 border-stone-300'
+                              : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 border-stone-300 dark:border-stone-700'
                           }`}
                         >
                           {scale === 'extralarge' ? 'Extra Large' : scale}
@@ -1984,8 +2002,8 @@ export default function App() {
                   </div>
 
                   {/* Language Selection */}
-                  <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 space-y-2">
-                    <h4 className="text-sm font-semibold text-stone-900">Regional Language (NER)</h4>
+                  <div className="p-3 bg-stone-50 dark:bg-stone-800/80 rounded-2xl border border-stone-200 dark:border-stone-700 space-y-2">
+                    <h4 className="text-sm font-semibold text-stone-900 dark:text-stone-100">Regional Language (NER)</h4>
                     <div className="grid grid-cols-2 gap-2">
                       {(Object.keys(LANGUAGE_METADATA) as LanguageCode[]).map((code) => (
                         <button
@@ -1998,7 +2016,7 @@ export default function App() {
                           className={`p-2.5 rounded-xl text-xs font-semibold border text-left flex flex-col ${
                             language === code
                               ? 'bg-teal-850 text-white border-teal-850'
-                              : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-100'
+                              : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-700'
                           }`}
                         >
                           <span className="font-bold">{LANGUAGE_METADATA[code].nativeName}</span>
@@ -2013,9 +2031,9 @@ export default function App() {
                     <button
                       id="settings-test-reconnect-btn"
                       onClick={handleTriggerSync}
-                      className="w-full py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold text-xs rounded-xl border border-stone-300 flex items-center justify-center gap-2"
+                      className="w-full py-2.5 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 font-semibold text-xs rounded-xl border border-stone-300 dark:border-stone-700 flex items-center justify-center gap-2"
                     >
-                      <RefreshCw className="w-4 h-4 text-stone-600" />
+                      <RefreshCw className="w-4 h-4 text-stone-600 dark:text-stone-400" />
                       <span>Test Reconnect & Sync Telemetry</span>
                     </button>
                   </div>
@@ -2047,46 +2065,46 @@ export default function App() {
 
                 {/* Cognitive Stability Metrics */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <div className="bg-white p-3.5 rounded-2xl border border-stone-200 shadow-2xs">
-                    <p className="text-[10px] text-stone-500 font-bold uppercase">Stability Score</p>
-                    <p className="text-2xl font-bold text-teal-850 mt-0.5">88/100</p>
-                    <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                  <div className="bg-white dark:bg-stone-900 p-3.5 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-2xs">
+                    <p className="text-[10px] text-stone-500 dark:text-stone-400 font-bold uppercase">Stability Score</p>
+                    <p className="text-2xl font-bold text-teal-850 dark:text-teal-300 mt-0.5">88/100</p>
+                    <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded">
                       Stable Trajectory
                     </span>
                   </div>
-                  <div className="bg-white p-3.5 rounded-2xl border border-stone-200 shadow-2xs">
-                    <p className="text-[10px] text-stone-500 font-bold uppercase">Routine Adherence</p>
-                    <p className="text-2xl font-bold text-stone-800 mt-0.5">
+                  <div className="bg-white dark:bg-stone-900 p-3.5 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-2xs">
+                    <p className="text-[10px] text-stone-500 dark:text-stone-400 font-bold uppercase">Routine Adherence</p>
+                    <p className="text-2xl font-bold text-stone-800 dark:text-stone-200 mt-0.5">
                       {Math.round(
                         (routines.filter((r) => r.completed).length / Math.max(1, routines.length)) *
                           100
                       )}
                       %
                     </p>
-                    <span className="text-[10px] text-stone-500">
+                    <span className="text-[10px] text-stone-500 dark:text-stone-400">
                       {routines.filter((r) => r.completed).length} of {routines.length} today
                     </span>
                   </div>
                   <div
                     id="caregiver-metric-games-btn"
                     onClick={() => navigateCaregiverTab('games')}
-                    className="bg-white p-3.5 rounded-2xl border border-stone-200 shadow-2xs hover:border-teal-700 cursor-pointer transition-all"
+                    className="bg-white dark:bg-stone-900 p-3.5 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-2xs hover:border-teal-700 dark:hover:border-teal-500 cursor-pointer transition-all"
                   >
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] text-stone-500 font-bold uppercase">Game Sessions</p>
+                      <p className="text-[10px] text-stone-500 dark:text-stone-400 font-bold uppercase">Game Sessions</p>
                       <Gamepad2 className="w-3.5 h-3.5 text-amber-600" />
                     </div>
                     <p className="text-2xl font-bold text-amber-600 mt-0.5">{sessions.length}</p>
-                    <span className="text-[10px] text-teal-850 font-semibold flex items-center gap-0.5">
+                    <span className="text-[10px] text-teal-850 dark:text-teal-300 font-semibold flex items-center gap-0.5">
                       View Accuracy →
                     </span>
                   </div>
-                  <div className="bg-white p-3.5 rounded-2xl border border-stone-200 shadow-2xs">
-                    <p className="text-[10px] text-stone-500 font-bold uppercase">Meds Compliance</p>
-                    <p className="text-2xl font-bold text-teal-800 mt-0.5">
+                  <div className="bg-white dark:bg-stone-900 p-3.5 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-2xs">
+                    <p className="text-[10px] text-stone-500 dark:text-stone-400 font-bold uppercase">Meds Compliance</p>
+                    <p className="text-2xl font-bold text-teal-800 dark:text-teal-300 mt-0.5">
                       {reminders.filter((r) => r.completedToday).length}/{reminders.length}
                     </p>
-                    <span className="text-[10px] text-stone-500">Scheduled pills taken</span>
+                    <span className="text-[10px] text-stone-500 dark:text-stone-400">Scheduled pills taken</span>
                   </div>
                 </div>
 
@@ -2095,41 +2113,41 @@ export default function App() {
                   <div
                     id="caregiver-quick-games-btn"
                     onClick={() => navigateCaregiverTab('games')}
-                    className="p-4 bg-white rounded-2xl border border-stone-200 shadow-2xs hover:border-teal-700 cursor-pointer"
+                    className="p-4 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-2xs hover:border-teal-700 dark:hover:border-teal-500 cursor-pointer"
                   >
-                    <Gamepad2 className="w-5 h-5 text-teal-850 mb-2" />
-                    <h3 className="font-semibold text-sm text-stone-900">Game Performance</h3>
-                    <p className="text-xs text-stone-500 mt-1">
+                    <Gamepad2 className="w-5 h-5 text-teal-850 dark:text-teal-400 mb-2" />
+                    <h3 className="font-semibold text-sm text-stone-900 dark:text-stone-100">Game Performance</h3>
+                    <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
                       Visual recall, accuracy rates, and play frequency.
                     </p>
                   </div>
                   <div
                     onClick={() => navigateCaregiverTab('routine')}
-                    className="p-4 bg-white rounded-2xl border border-stone-200 shadow-2xs hover:border-teal-700 cursor-pointer"
+                    className="p-4 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-2xs hover:border-teal-700 dark:hover:border-teal-500 cursor-pointer"
                   >
-                    <ListTodo className="w-5 h-5 text-teal-850 mb-2" />
-                    <h3 className="font-semibold text-sm text-stone-900">Manage Routines</h3>
-                    <p className="text-xs text-stone-500 mt-1">
+                    <ListTodo className="w-5 h-5 text-teal-850 dark:text-teal-400 mb-2" />
+                    <h3 className="font-semibold text-sm text-stone-900 dark:text-stone-100">Manage Routines</h3>
+                    <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
                       Customize daily morning, afternoon, and evening routines.
                     </p>
                   </div>
                   <div
                     onClick={() => navigateCaregiverTab('reports')}
-                    className="p-4 bg-white rounded-2xl border border-stone-200 shadow-2xs hover:border-teal-700 cursor-pointer"
+                    className="p-4 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-2xs hover:border-teal-700 dark:hover:border-teal-500 cursor-pointer"
                   >
-                    <BarChart3 className="w-5 h-5 text-teal-850 mb-2" />
-                    <h3 className="font-semibold text-sm text-stone-900">Clinical & AI Digest</h3>
-                    <p className="text-xs text-stone-500 mt-1">
+                    <BarChart3 className="w-5 h-5 text-teal-850 dark:text-teal-400 mb-2" />
+                    <h3 className="font-semibold text-sm text-stone-900 dark:text-stone-100">Clinical & AI Digest</h3>
+                    <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
                       Review MMSE-aligned cognitive telemetry and doctor notes.
                     </p>
                   </div>
                   <div
                     onClick={() => setIsCircleModalOpen(true)}
-                    className="p-4 bg-white rounded-2xl border border-stone-200 shadow-2xs hover:border-teal-700 cursor-pointer"
+                    className="p-4 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-2xs hover:border-teal-700 dark:hover:border-teal-500 cursor-pointer"
                   >
-                    <User className="w-5 h-5 text-teal-850 mb-2" />
-                    <h3 className="font-semibold text-sm text-stone-900">Care Circle Members</h3>
-                    <p className="text-xs text-stone-500 mt-1">
+                    <User className="w-5 h-5 text-teal-850 dark:text-teal-400 mb-2" />
+                    <h3 className="font-semibold text-sm text-stone-900 dark:text-stone-100">Care Circle Members</h3>
+                    <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
                       Link or remove seniors under your care.
                     </p>
                   </div>
@@ -2165,8 +2183,8 @@ export default function App() {
               <div id="caregiver-routine-view" className="space-y-4 animate-in fade-in">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-xl font-serif font-bold text-stone-900">Daily Routines</h2>
-                    <p className="text-xs text-stone-600">
+                    <h2 className="text-xl font-serif font-bold text-stone-900 dark:text-stone-100">Daily Routines</h2>
+                    <p className="text-xs text-stone-600 dark:text-stone-400">
                       Routines synchronized for {currentPatient?.fullName || 'Patient'}.
                     </p>
                   </div>
@@ -2187,19 +2205,19 @@ export default function App() {
 
                 {/* AI Routine Suggestions Box */}
                 {aiSuggestions.length > 0 && (
-                  <div className="bg-amber-50 border border-amber-300 rounded-3xl p-4 space-y-2">
-                    <p className="text-xs font-bold text-amber-950 uppercase tracking-wide">
+                  <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-3xl p-4 space-y-2">
+                    <p className="text-xs font-bold text-amber-950 dark:text-amber-200 uppercase tracking-wide">
                       AI Suggested Cultural Routines for Northeast Dementia Care
                     </p>
                     <div className="space-y-2">
                       {aiSuggestions.map((sug, i) => (
                         <div
                           key={i}
-                          className="flex items-center justify-between bg-white p-3 rounded-2xl border border-amber-200 text-xs"
+                          className="flex items-center justify-between bg-white dark:bg-stone-800 p-3 rounded-2xl border border-amber-200 dark:border-amber-900 text-xs"
                         >
                           <div>
-                            <p className="font-bold text-stone-900">{sug.title}</p>
-                            <p className="text-stone-500">{sug.timeSlot} • {sug.time} • {sug.notes}</p>
+                            <p className="font-bold text-stone-900 dark:text-stone-100">{sug.title}</p>
+                            <p className="text-stone-500 dark:text-stone-400">{sug.timeSlot} • {sug.time} • {sug.notes}</p>
                           </div>
                           <button
                             onClick={() => handleApplyAiSuggestion(sug)}
@@ -2213,22 +2231,22 @@ export default function App() {
                   </div>
                 )}
 
-                <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs space-y-2">
+                <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-2">
                   {routines.length === 0 ? (
-                    <p className="text-xs text-stone-500 text-center py-4">No routines set.</p>
+                    <p className="text-xs text-stone-500 dark:text-stone-400 text-center py-4">No routines set.</p>
                   ) : (
                     routines.map((task) => (
                       <div
                         key={task.id}
-                        className="flex items-center justify-between p-3 bg-stone-50 border border-stone-200 rounded-2xl text-xs"
+                        className="flex items-center justify-between p-3 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl text-xs"
                       >
                         <div className="flex items-center gap-2.5">
                           <CheckCircle2
-                            className={`w-4 h-4 ${task.completed ? 'text-emerald-600' : 'text-stone-300'}`}
+                            className={`w-4 h-4 ${task.completed ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-300 dark:text-stone-600'}`}
                           />
                           <div>
-                            <p className="font-semibold text-stone-900">{task.title}</p>
-                            <p className="text-stone-500">{task.timeSlot} • {task.time}</p>
+                            <p className="font-semibold text-stone-900 dark:text-stone-100">{task.title}</p>
+                            <p className="text-stone-500 dark:text-stone-400">{task.timeSlot} • {task.time}</p>
                           </div>
                         </div>
                         <button
@@ -2246,9 +2264,9 @@ export default function App() {
                 {/* Add Routine Form */}
                 <form
                   onSubmit={handleAddRoutine}
-                  className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs space-y-3"
+                  className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-3"
                 >
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
                     Add Routine Task
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -2258,14 +2276,14 @@ export default function App() {
                       value={newRoutineTitle}
                       onChange={(e) => setNewRoutineTitle(e.target.value)}
                       placeholder="e.g. Garden Walk & Tulsi Tea"
-                      className="px-3 py-2 text-xs border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 sm:col-span-2"
+                      className="px-3 py-2 text-xs border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 sm:col-span-2"
                     />
                     <input
                       type="text"
                       value={newRoutineTime}
                       onChange={(e) => setNewRoutineTime(e.target.value)}
                       placeholder="08:00 AM"
-                      className="px-3 py-2 text-xs border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50"
+                      className="px-3 py-2 text-xs border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100"
                     />
                   </div>
                   <button
@@ -2282,28 +2300,28 @@ export default function App() {
             {caregiverTab === 'reminders' && (
               <div id="caregiver-reminders-view" className="space-y-4 animate-in fade-in">
                 <div>
-                  <h2 className="text-xl font-serif font-bold text-stone-900">Medication & Hydration</h2>
-                  <p className="text-xs text-stone-600">
+                  <h2 className="text-xl font-serif font-bold text-stone-900 dark:text-stone-100">Medication & Hydration</h2>
+                  <p className="text-xs text-stone-600 dark:text-stone-400">
                     Ensure adherence to memory and clinical prescriptions.
                   </p>
                 </div>
 
-                <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs space-y-2">
+                <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-2">
                   {reminders.length === 0 ? (
-                    <p className="text-xs text-stone-500 text-center py-4">No reminders logged.</p>
+                    <p className="text-xs text-stone-500 dark:text-stone-400 text-center py-4">No reminders logged.</p>
                   ) : (
                     reminders.map((rem) => (
                       <div
                         key={rem.id}
-                        className="flex items-center justify-between p-3 bg-stone-50 border border-stone-200 rounded-2xl text-xs"
+                        className="flex items-center justify-between p-3 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl text-xs"
                       >
                         <div className="flex items-center gap-2.5">
                           <CheckCircle2
-                            className={`w-4 h-4 ${rem.completedToday ? 'text-emerald-600' : 'text-stone-300'}`}
+                            className={`w-4 h-4 ${rem.completedToday ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-300 dark:text-stone-600'}`}
                           />
                           <div>
-                            <p className="font-semibold text-stone-900">{rem.title}</p>
-                            <p className="text-stone-500">{rem.time} • {rem.description}</p>
+                            <p className="font-semibold text-stone-900 dark:text-stone-100">{rem.title}</p>
+                            <p className="text-stone-500 dark:text-stone-400">{rem.time} • {rem.description}</p>
                           </div>
                         </div>
                         <button
@@ -2320,9 +2338,9 @@ export default function App() {
 
                 <form
                   onSubmit={handleAddReminder}
-                  className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs space-y-3"
+                  className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-3"
                 >
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
                     Add Reminder
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -2332,14 +2350,14 @@ export default function App() {
                       value={newReminderTitle}
                       onChange={(e) => setNewReminderTitle(e.target.value)}
                       placeholder="e.g. Memory Prescribed Tablet"
-                      className="px-3 py-2 text-xs border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 sm:col-span-2"
+                      className="px-3 py-2 text-xs border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 sm:col-span-2"
                     />
                     <input
                       type="text"
                       value={newReminderTime}
                       onChange={(e) => setNewReminderTime(e.target.value)}
                       placeholder="08:30 PM"
-                      className="px-3 py-2 text-xs border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50"
+                      className="px-3 py-2 text-xs border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100"
                     />
                   </div>
                   <button
@@ -2356,7 +2374,7 @@ export default function App() {
             {caregiverTab === 'memories' && (
               <div id="caregiver-memories-view" className="space-y-4 animate-in fade-in">
                 {/* Two Separate Sub-Tabs: Memories vs People in Life */}
-                <div className="flex items-center gap-1.5 p-1.5 bg-stone-200/80 rounded-2xl border border-stone-200 w-full sm:w-fit">
+                <div className="flex items-center gap-1.5 p-1.5 bg-stone-200/80 dark:bg-stone-800/80 rounded-2xl border border-stone-200 dark:border-stone-700 w-full sm:w-fit">
                   <button
                     id="caregiver-subtab-memories-btn"
                     type="button"
@@ -2364,7 +2382,7 @@ export default function App() {
                     className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-bold transition-all ${
                       memorySubTab === 'memories'
                         ? 'bg-teal-850 text-white shadow-xs'
-                        : 'text-stone-600 hover:text-stone-950 hover:bg-white/60'
+                        : 'text-stone-600 dark:text-stone-300 hover:text-stone-950 dark:hover:text-white hover:bg-white/60 dark:hover:bg-stone-700/60'
                     }`}
                   >
                     <BookOpen className="w-4 h-4" />
@@ -2378,7 +2396,7 @@ export default function App() {
                     className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-bold transition-all ${
                       memorySubTab === 'people'
                         ? 'bg-teal-850 text-white shadow-xs'
-                        : 'text-stone-600 hover:text-stone-950 hover:bg-white/60'
+                        : 'text-stone-600 dark:text-stone-300 hover:text-stone-950 dark:hover:text-white hover:bg-white/60 dark:hover:bg-stone-700/60'
                     }`}
                   >
                     <Users className="w-4 h-4" />
@@ -2398,10 +2416,10 @@ export default function App() {
                   />
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white p-4 rounded-3xl border border-stone-200 shadow-2xs">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white dark:bg-stone-900 p-4 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-2xs">
                       <div>
-                        <h2 className="text-xl font-serif font-bold text-stone-900">Keepsake Album Management</h2>
-                        <p className="text-xs text-stone-600">
+                        <h2 className="text-xl font-serif font-bold text-stone-900 dark:text-stone-100">Keepsake Album Management</h2>
+                        <p className="text-xs text-stone-600 dark:text-stone-400">
                           Upload and manage nostalgic family photos and voice notes for reminiscence therapy.
                         </p>
                       </div>
@@ -2416,13 +2434,13 @@ export default function App() {
                     </div>
 
                     {memories.length === 0 ? (
-                      <div className="bg-white rounded-3xl p-8 border border-stone-200 text-center shadow-2xs space-y-3">
-                        <div className="w-14 h-14 mx-auto rounded-full bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-800">
+                      <div className="bg-white dark:bg-stone-900 rounded-3xl p-8 border border-stone-200 dark:border-stone-800 text-center shadow-2xs space-y-3">
+                        <div className="w-14 h-14 mx-auto rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 flex items-center justify-center text-teal-800 dark:text-teal-300">
                           <BookOpen className="w-7 h-7" />
                         </div>
                         <div className="max-w-md mx-auto space-y-1">
-                          <h3 className="font-serif font-bold text-base text-stone-900">No Memories Added Yet</h3>
-                          <p className="text-xs text-stone-600">
+                          <h3 className="font-serif font-bold text-base text-stone-900 dark:text-stone-100">No Memories Added Yet</h3>
+                          <p className="text-xs text-stone-600 dark:text-stone-400">
                             Upload photos, stories, or voice notes below to build the patient's personal memory album.
                           </p>
                         </div>
@@ -2434,8 +2452,8 @@ export default function App() {
                           return (
                             <div
                               key={mem.id}
-                              className={`bg-white rounded-2xl border overflow-hidden shadow-2xs transition-all flex flex-col justify-between ${
-                                isReading ? 'border-amber-400 ring-2 ring-amber-300/60' : 'border-stone-200'
+                              className={`bg-white dark:bg-stone-900 rounded-2xl border overflow-hidden shadow-2xs transition-all flex flex-col justify-between ${
+                                isReading ? 'border-amber-400 ring-2 ring-amber-300/60' : 'border-stone-200 dark:border-stone-800'
                               }`}
                             >
                               <div>
@@ -2453,11 +2471,11 @@ export default function App() {
                                   isCaregiverView
                                 />
                                 <div className="p-3">
-                                  <p className="font-semibold text-xs text-stone-900">{mem.title}</p>
-                                  <p className="text-[10px] text-stone-500">{mem.region} • {mem.category}</p>
-                                  <p className="text-[11px] text-stone-600 mt-1 line-clamp-2">{mem.story}</p>
+                                  <p className="font-semibold text-xs text-stone-900 dark:text-stone-100">{mem.title}</p>
+                                  <p className="text-[10px] text-stone-500 dark:text-stone-400">{mem.region} • {mem.category}</p>
+                                  <p className="text-[11px] text-stone-600 dark:text-stone-400 mt-1 line-clamp-2">{mem.story}</p>
                                   {mem.voiceNoteAudioUrl && (
-                                    <div className="mt-2 pt-1.5 border-t border-stone-100">
+                                    <div className="mt-2 pt-1.5 border-t border-stone-100 dark:border-stone-800">
                                       <audio
                                         controls
                                         src={mem.voiceNoteAudioUrl}
@@ -2468,7 +2486,7 @@ export default function App() {
                                 </div>
                               </div>
 
-                              <div className="p-3 pt-0 flex items-center justify-between gap-2 border-t border-stone-50 mt-1">
+                              <div className="p-3 pt-0 flex items-center justify-between gap-2 border-t border-stone-50 dark:border-stone-800 mt-1">
                                 <MemoryVoiceReaderButton
                                   memory={mem}
                                   activeReadingId={activeReadingMemoryId}
@@ -2490,22 +2508,22 @@ export default function App() {
                     )}
 
                     {/* Caregiver Add Memory Form with Photo Upload */}
-                    <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs space-y-4">
+                    <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
                             Add New Keepsake Memory for Patient
                           </h4>
-                          <p className="text-[11px] text-stone-500">
+                          <p className="text-[11px] text-stone-500 dark:text-stone-400">
                             Upload multi-photo family albums or reminiscence prompts.
                           </p>
                         </div>
                         <button
                           type="button"
                           onClick={() => setIsVoiceNoteModalOpen(true)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-full text-xs font-semibold text-teal-950 transition-colors shadow-2xs"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 border border-amber-300 dark:border-amber-700 rounded-full text-xs font-semibold text-teal-950 dark:text-amber-200 transition-colors shadow-2xs"
                         >
-                          <Mic className="w-3.5 h-3.5 text-rose-600" />
+                          <Mic className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
                           <span>Record Voice Note with AI</span>
                         </button>
                       </div>
@@ -2519,13 +2537,13 @@ export default function App() {
                             value={newMemoryTitle}
                             onChange={(e) => setNewMemoryTitle(e.target.value)}
                             placeholder="Title (e.g. Granddaughter's Wedding in Guwahati)"
-                            className="px-3 py-2 text-xs border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50"
+                            className="px-3 py-2 text-xs border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100"
                           />
                           <select
                             id="caregiver-new-memory-region"
                             value={newMemoryRegion}
                             onChange={(e) => setNewMemoryRegion(e.target.value)}
-                            className="px-3 py-2 text-xs border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50"
+                            className="px-3 py-2 text-xs border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100"
                           >
                             <option value="Assam">Assam</option>
                             <option value="Manipur">Manipur</option>
@@ -2540,7 +2558,7 @@ export default function App() {
                           value={newMemoryStory}
                           onChange={(e) => setNewMemoryStory(e.target.value)}
                           placeholder="Narrative description to stimulate familiar memories..."
-                          className="w-full px-3 py-2 text-xs border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50"
+                          className="w-full px-3 py-2 text-xs border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100"
                         />
                         <PhotoUploadZone
                           photos={newMemoryPhotos}
@@ -2571,10 +2589,10 @@ export default function App() {
               <div id="caregiver-reports-view" className="space-y-4 animate-in fade-in">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-xl font-serif font-bold text-stone-900">
+                    <h2 className="text-xl font-serif font-bold text-stone-900 dark:text-stone-100">
                       Clinical AI Digest & Telemetry
                     </h2>
-                    <p className="text-xs text-stone-600">
+                    <p className="text-xs text-stone-600 dark:text-stone-400">
                       Evidence-based MMSE cognitive trajectories for geriatric review.
                     </p>
                   </div>
@@ -2594,56 +2612,56 @@ export default function App() {
                 </div>
 
                 {clinicalReport ? (
-                  <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs space-y-4">
-                    <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                  <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-4">
+                    <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3">
                       <div>
-                        <h3 className="font-serif font-bold text-base text-stone-900">
+                        <h3 className="font-serif font-bold text-base text-stone-900 dark:text-stone-100">
                           {clinicalReport.summaryTitle}
                         </h3>
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
                           Status: {clinicalReport.stabilityStatus}
                         </span>
                       </div>
-                      <span className="text-lg font-bold text-teal-850">
+                      <span className="text-lg font-bold text-teal-850 dark:text-teal-300">
                         Score: {clinicalReport.cognitiveStabilityScore}/100
                       </span>
                     </div>
 
-                    <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200">
-                      <p className="text-xs font-bold text-stone-700 uppercase tracking-wide">
+                    <div className="bg-stone-50 dark:bg-stone-800/80 p-4 rounded-2xl border border-stone-200 dark:border-stone-700">
+                      <p className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wide">
                         Family Narrative Overview
                       </p>
-                      <p className="text-xs text-stone-800 mt-1 leading-relaxed">
+                      <p className="text-xs text-stone-800 dark:text-stone-200 mt-1 leading-relaxed">
                         {clinicalReport.familyNarrative}
                       </p>
                     </div>
 
-                    <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200">
-                      <p className="text-xs font-bold text-stone-700 uppercase tracking-wide">
+                    <div className="bg-stone-50 dark:bg-stone-800/80 p-4 rounded-2xl border border-stone-200 dark:border-stone-700">
+                      <p className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wide">
                         Clinical & Reaction Time Analysis
                       </p>
-                      <p className="text-xs text-stone-800 mt-1 leading-relaxed">
+                      <p className="text-xs text-stone-800 dark:text-stone-200 mt-1 leading-relaxed">
                         {clinicalReport.clinicalAnalysis}
                       </p>
                     </div>
 
                     {clinicalReport.mmseAlignment && (
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <div className="p-2.5 bg-teal-50 rounded-xl border border-teal-200">
-                          <p className="text-[10px] font-bold uppercase text-teal-900">Orientation</p>
-                          <p className="text-xs text-teal-800 mt-0.5">
+                        <div className="p-2.5 bg-teal-50 dark:bg-teal-950/50 rounded-xl border border-teal-200 dark:border-teal-850">
+                          <p className="text-[10px] font-bold uppercase text-teal-900 dark:text-teal-200">Orientation</p>
+                          <p className="text-xs text-teal-800 dark:text-teal-300 mt-0.5">
                             {clinicalReport.mmseAlignment.orientationScore}
                           </p>
                         </div>
-                        <div className="p-2.5 bg-teal-50 rounded-xl border border-teal-200">
-                          <p className="text-[10px] font-bold uppercase text-teal-900">Recall</p>
-                          <p className="text-xs text-teal-800 mt-0.5">
+                        <div className="p-2.5 bg-teal-50 dark:bg-teal-950/50 rounded-xl border border-teal-200 dark:border-teal-850">
+                          <p className="text-[10px] font-bold uppercase text-teal-900 dark:text-teal-200">Recall</p>
+                          <p className="text-xs text-teal-800 dark:text-teal-300 mt-0.5">
                             {clinicalReport.mmseAlignment.recallScore}
                           </p>
                         </div>
-                        <div className="p-2.5 bg-teal-50 rounded-xl border border-teal-200">
-                          <p className="text-[10px] font-bold uppercase text-teal-900">Attention</p>
-                          <p className="text-xs text-teal-800 mt-0.5">
+                        <div className="p-2.5 bg-teal-50 dark:bg-teal-950/50 rounded-xl border border-teal-200 dark:border-teal-850">
+                          <p className="text-[10px] font-bold uppercase text-teal-900 dark:text-teal-200">Attention</p>
+                          <p className="text-xs text-teal-800 dark:text-teal-300 mt-0.5">
                             {clinicalReport.mmseAlignment.attentionScore}
                           </p>
                         </div>
@@ -2652,13 +2670,13 @@ export default function App() {
 
                     {clinicalReport.caregiverActionItems && (
                       <div>
-                        <p className="text-xs font-bold text-stone-700 uppercase tracking-wide mb-1.5">
+                        <p className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wide mb-1.5">
                           Caregiver Action Items
                         </p>
                         <ul className="space-y-1">
                           {clinicalReport.caregiverActionItems.map((item: string, idx: number) => (
-                            <li key={idx} className="text-xs text-stone-700 flex items-start gap-1.5">
-                              <span className="text-teal-700 font-bold">•</span>
+                            <li key={idx} className="text-xs text-stone-700 dark:text-stone-300 flex items-start gap-1.5">
+                              <span className="text-teal-700 dark:text-teal-400 font-bold">•</span>
                               <span>{item}</span>
                             </li>
                           ))}
@@ -2667,12 +2685,12 @@ export default function App() {
                     )}
                   </div>
                 ) : (
-                  <div className="bg-white rounded-3xl p-8 border border-stone-200 shadow-2xs text-center">
+                  <div className="bg-white dark:bg-stone-900 rounded-3xl p-8 border border-stone-200 dark:border-stone-800 shadow-2xs text-center">
                     <BarChart3 className="w-8 h-8 text-stone-400 mx-auto mb-2" />
-                    <h3 className="font-serif font-bold text-sm text-stone-800">
+                    <h3 className="font-serif font-bold text-sm text-stone-800 dark:text-stone-200">
                       No Report Generated Yet
                     </h3>
-                    <p className="text-xs text-stone-500 mt-1 max-w-sm mx-auto">
+                    <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 max-w-sm mx-auto">
                       Tap the "Generate Today's Report" button above to produce an AI & clinical analysis for {currentPatient?.fullName || 'the senior'}.
                     </p>
                   </div>
@@ -2684,17 +2702,17 @@ export default function App() {
             {caregiverTab === 'me' && (
               <div id="caregiver-me-view" className="space-y-4 animate-in fade-in">
                 <div>
-                  <h2 className="text-xl font-serif font-bold text-stone-900">Care Circle Management</h2>
-                  <p className="text-xs text-stone-600">
+                  <h2 className="text-xl font-serif font-bold text-stone-900 dark:text-stone-100">Care Circle Management</h2>
+                  <p className="text-xs text-stone-600 dark:text-stone-400">
                     Connect and watch over seniors and family members.
                   </p>
                 </div>
 
-                <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-2xs space-y-4">
+                <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-semibold text-stone-500">Your Caregiver Key</p>
-                      <p className="text-xl font-mono font-bold text-teal-850">
+                      <p className="text-xs font-semibold text-stone-500 dark:text-stone-400">Your Caregiver Key</p>
+                      <p className="text-xl font-mono font-bold text-teal-850 dark:text-teal-300">
                         {currentCaretaker?.caregiverKey || 'CG-ACTIVE'}
                       </p>
                     </div>
@@ -2707,19 +2725,19 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div className="pt-3 border-t border-stone-100">
-                    <p className="text-xs font-semibold text-stone-700 mb-2">
+                  <div className="pt-3 border-t border-stone-100 dark:border-stone-800">
+                    <p className="text-xs font-semibold text-stone-700 dark:text-stone-300 mb-2">
                       Connected Patients ({allPatients.length})
                     </p>
                     <div className="space-y-2">
                       {allPatients.map((pat) => (
                         <div
                           key={pat.id}
-                          className="flex items-center justify-between p-3 bg-stone-50 rounded-2xl border border-stone-200 text-xs"
+                          className="flex items-center justify-between p-3 bg-stone-50 dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 text-xs"
                         >
                           <div>
-                            <p className="font-semibold text-stone-900">{pat.fullName}</p>
-                            <p className="text-stone-500">
+                            <p className="font-semibold text-stone-900 dark:text-stone-100">{pat.fullName}</p>
+                            <p className="text-stone-500 dark:text-stone-400">
                               Key: {pat.patientKey || 'PT-DEFAULT'} • Age: {pat.age}
                             </p>
                           </div>
@@ -2731,7 +2749,7 @@ export default function App() {
                             className={`px-3 py-1 rounded-lg font-semibold ${
                               currentPatient?.id === pat.id
                                 ? 'bg-teal-850 text-white'
-                                : 'bg-white border border-stone-300 text-stone-700 hover:bg-stone-100'
+                                : 'bg-white dark:bg-stone-700 border border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-600'
                             }`}
                           >
                             {currentPatient?.id === pat.id ? 'Active' : 'Select'}

@@ -24,6 +24,7 @@ const STORAGE_KEYS = {
   SESSIONS: 'saathi_game_sessions_',
   SYNC_QUEUE: 'saathi_sync_queue',
   HIGH_CONTRAST: 'saathi_pref_high_contrast',
+  DARK_MODE: 'saathi_pref_dark_mode',
   TEXT_SCALE: 'saathi_pref_text_scale',
   LANGUAGE: 'saathi_pref_language',
 };
@@ -347,6 +348,24 @@ export class OfflineStore {
 
   static setHighContrast(val: boolean): void {
     localStorage.setItem(STORAGE_KEYS.HIGH_CONTRAST, String(val));
+  }
+
+  static getDarkMode(): boolean {
+    const saved = localStorage.getItem(STORAGE_KEYS.DARK_MODE);
+    if (saved !== null) {
+      return saved === 'true';
+    }
+    // Also detect system preference or existing document class
+    return (
+      document.documentElement.classList.contains('dark') ||
+      (typeof window !== 'undefined' &&
+        window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches)
+    );
+  }
+
+  static setDarkMode(val: boolean): void {
+    localStorage.setItem(STORAGE_KEYS.DARK_MODE, String(val));
   }
 
   static getTextScale(): TextScale {

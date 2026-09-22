@@ -348,7 +348,7 @@ export const MemoryTilesGame: React.FC<MemoryTilesGameProps> = ({
   return (
     <div
       id="memory-tiles-game-container"
-      className="fixed inset-0 z-50 bg-[#FAF8F5] flex flex-col overflow-y-auto"
+      className="fixed inset-0 z-50 bg-[#FAF8F5] dark:bg-[#0D1117] flex flex-col overflow-y-auto"
     >
       {/* Top Header */}
       <header className="bg-teal-850 text-white px-4 py-3 sm:px-6 flex items-center justify-between shadow-xs sticky top-0 z-20">
@@ -400,15 +400,15 @@ export const MemoryTilesGame: React.FC<MemoryTilesGameProps> = ({
       </header>
 
       {/* Control Ribbon: Grid Difficulty & Delay */}
-      <div className="bg-white border-b border-stone-200 px-4 py-2.5 shadow-2xs">
+      <div className="bg-white dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800 px-4 py-2.5 shadow-2xs">
         <div className="max-w-xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
           {/* Grid Size selector */}
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-stone-700 flex items-center gap-1">
-              <Sliders className="w-3.5 h-3.5 text-teal-700" />
+            <span className="font-semibold text-stone-700 dark:text-stone-300 flex items-center gap-1">
+              <Sliders className="w-3.5 h-3.5 text-teal-700 dark:text-teal-400" />
               <span>{language === 'as' ? 'গ্ৰিড:' : language === 'hi' ? 'ग्रिड:' : language === 'mni' ? 'গ্রিদ:' : 'Grid:'}</span>
             </span>
-            <div className="inline-flex bg-stone-100 p-0.5 rounded-xl border border-stone-200">
+            <div className="inline-flex bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl border border-stone-200 dark:border-stone-700">
               {(
                 [
                   { id: '2x2', label: language === 'as' ? '২×২ (২ যোৰ)' : language === 'hi' ? '२×२ (२ जोड़े)' : language === 'mni' ? '২×২ (যোৰা ২)' : '2×2 (2 pairs)' },
@@ -423,7 +423,7 @@ export const MemoryTilesGame: React.FC<MemoryTilesGameProps> = ({
                   className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
                     difficulty === mode.id
                       ? 'bg-teal-850 text-white shadow-2xs'
-                      : 'text-stone-600 hover:text-stone-900'
+                      : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
                   }`}
                 >
                   {mode.label}
@@ -434,14 +434,14 @@ export const MemoryTilesGame: React.FC<MemoryTilesGameProps> = ({
 
           {/* Configurable Flip Delay */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-stone-500 font-medium">
+            <span className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">
               {language === 'as' ? 'লুটিওৱাৰ গতি:' : language === 'hi' ? 'पलटने की गति:' : language === 'mni' ? 'ওনথোকপগী খোঙজেল:' : 'Flip Speed:'}
             </span>
-            <div className="inline-flex bg-stone-100 p-0.5 rounded-xl border border-stone-200">
+            <div className="inline-flex bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl border border-stone-200 dark:border-stone-700">
               {[
                 { ms: 800, label: language === 'as' ? 'দ্ৰুত (০.৮s)' : language === 'hi' ? 'तेज़ (०.८s)' : language === 'mni' ? 'য়াংবা (০.৮s)' : 'Fast (0.8s)' },
                 { ms: 1000, label: language === 'as' ? 'স্বাভাৱিক (১.০s)' : language === 'hi' ? 'सहज (१.०s)' : language === 'mni' ? 'মায়াই ওল্বা (১.০s)' : 'Calm (1.0s)' },
-                { ms: 1200, label: language === 'as' ? 'ধীৰ (১.২s)' : language === 'hi' ? 'शांत (१.२s)' : language === 'mni' ? 'তপ্না (১.২s)' : 'Relaxed (1.2s)' },
+                { ms: 1200, label: language === 'as' ? 'ধীৰ (১.২s)' : language === 'hi' ? 'शांत (१.২s)' : language === 'mni' ? 'তপ্না (১.২s)' : 'Relaxed (1.2s)' },
               ].map((d) => (
                 <button
                   key={d.ms}
@@ -451,7 +451,7 @@ export const MemoryTilesGame: React.FC<MemoryTilesGameProps> = ({
                   className={`px-2 py-0.5 rounded-lg text-xs font-medium transition-all ${
                     flipDelayMs === d.ms
                       ? 'bg-amber-400 text-teal-950 font-bold shadow-2xs'
-                      : 'text-stone-600 hover:text-stone-900'
+                      : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
                   }`}
                 >
                   {d.label}
@@ -463,24 +463,24 @@ export const MemoryTilesGame: React.FC<MemoryTilesGameProps> = ({
       </div>
 
       {/* Live Stats Bar */}
-      <div className="max-w-xl w-full mx-auto px-4 pt-3 flex items-center justify-between text-stone-700">
+      <div className="max-w-xl w-full mx-auto px-4 pt-3 flex items-center justify-between text-stone-700 dark:text-stone-300">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 bg-white px-3 py-1.5 rounded-xl border border-stone-200 shadow-2xs">
-            <Timer className="w-4 h-4 text-teal-700" />
-            <span className="font-mono font-bold text-sm text-stone-900">
+          <div className="flex items-center gap-1 bg-white dark:bg-stone-800 px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 shadow-2xs">
+            <Timer className="w-4 h-4 text-teal-700 dark:text-teal-400" />
+            <span className="font-mono font-bold text-sm text-stone-900 dark:text-stone-100">
               {formatTime(elapsedSeconds)}
             </span>
           </div>
-          <div className="bg-white px-3 py-1.5 rounded-xl border border-stone-200 shadow-2xs">
-            <span className="text-[11px] text-stone-500 font-semibold uppercase mr-1">
+          <div className="bg-white dark:bg-stone-800 px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 shadow-2xs">
+            <span className="text-[11px] text-stone-500 dark:text-stone-400 font-semibold uppercase mr-1">
               {language === 'as' ? 'চেষ্টা:' : language === 'hi' ? 'चालें:' : language === 'mni' ? 'খোঙথাং:' : 'Moves:'}
             </span>
-            <span className="font-bold text-stone-900">{moves}</span>
+            <span className="font-bold text-stone-900 dark:text-stone-100">{moves}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-300 shadow-2xs text-amber-900">
+          <div className="bg-amber-50 dark:bg-amber-950/40 px-3 py-1.5 rounded-xl border border-amber-300 dark:border-amber-800 shadow-2xs text-amber-900 dark:text-amber-200">
             <span className="text-[11px] font-semibold uppercase mr-1">
               {language === 'as' ? 'মিলা জোৰা:' : language === 'hi' ? 'मिलाए गए:' : language === 'mni' ? 'চপ মান্নবা:' : 'Matched:'}
             </span>
@@ -497,9 +497,9 @@ export const MemoryTilesGame: React.FC<MemoryTilesGameProps> = ({
         {lastMatchNotice && (
           <div
             id="match-feedback-banner"
-            className="mb-3 px-4 py-1.5 bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-bold rounded-full shadow-2xs flex items-center gap-1.5 animate-in fade-in zoom-in"
+            className="mb-3 px-4 py-1.5 bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 text-xs font-bold rounded-full shadow-2xs flex items-center gap-1.5 animate-in fade-in zoom-in"
           >
-            <Sparkles className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+            <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-spin" />
             <span>{lastMatchNotice}</span>
           </div>
         )}
@@ -508,17 +508,17 @@ export const MemoryTilesGame: React.FC<MemoryTilesGameProps> = ({
           /* Victory Completion Modal */
           <div
             id="memory-tiles-victory-card"
-            className="bg-white rounded-3xl p-6 sm:p-7 shadow-lg border border-amber-200 text-center w-full max-w-md animate-in fade-in zoom-in"
+            className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-7 shadow-lg border border-amber-200 dark:border-amber-800/60 text-center w-full max-w-md animate-in fade-in zoom-in"
           >
             <div className="w-16 h-16 bg-gradient-to-br from-amber-300 to-amber-500 text-teal-950 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-xs">
               <Trophy className="w-9 h-9" />
             </div>
 
-            <span className="text-[11px] font-bold uppercase tracking-wider text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-teal-800 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 px-2.5 py-0.5 rounded-full border border-teal-200 dark:border-teal-800">
               {language === 'as' ? 'স্মৃতি চৰ্চা সম্পূৰ্ণ হ’ল' : language === 'hi' ? 'स्मृति अभ्यास संपन्न' : language === 'mni' ? 'নিংশিংবা লোইশিনখ্রে' : 'Visual Recall Completed'}
             </span>
 
-            <h3 className="text-xl sm:text-2xl font-serif font-bold text-stone-900 mt-2 mb-1">
+            <h3 className="text-xl sm:text-2xl font-serif font-bold text-stone-900 dark:text-stone-100 mt-2 mb-1">
               {language === 'as'
                 ? `সুন্দৰ কাম, ${patient?.preferredName || 'জ্যেষ্ঠ'}!`
                 : language === 'hi'
@@ -528,7 +528,7 @@ export const MemoryTilesGame: React.FC<MemoryTilesGameProps> = ({
                 : `Splendid Work, ${patient?.preferredName || 'Senior'}!`}
             </h3>
 
-            <p className="text-xs text-stone-600 mb-4">
+            <p className="text-xs text-stone-600 dark:text-stone-400 mb-4">
               {language === 'as'
                 ? `আপুনি শান্ত মনেৰে সকলো ${totalPairs} টা বস্তুৰ জোৰা মিলালে।`
                 : language === 'hi'
@@ -542,7 +542,7 @@ export const MemoryTilesGame: React.FC<MemoryTilesGameProps> = ({
             <button
               id="memory-tiles-read-results-btn"
               onClick={handleReadResultsAloud}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-5 rounded-full bg-teal-50 hover:bg-teal-100 text-teal-850 text-xs font-semibold border border-teal-200 transition-colors mx-auto"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-5 rounded-full bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-850 dark:text-teal-300 text-xs font-semibold border border-teal-200 dark:border-teal-800 transition-colors mx-auto"
             >
               <Volume2 className="w-3.5 h-3.5" />
               <span>
@@ -552,34 +552,34 @@ export const MemoryTilesGame: React.FC<MemoryTilesGameProps> = ({
 
             {/* Performance metrics breakdown */}
             <div className="grid grid-cols-3 gap-2.5 text-center mb-5">
-              <div className="p-2 bg-white rounded-xl border border-stone-200 shadow-2xs">
-                <p className="text-[10px] text-stone-500 font-bold uppercase">
+              <div className="p-2 bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 shadow-2xs">
+                <p className="text-[10px] text-stone-500 dark:text-stone-400 font-bold uppercase">
                   {language === 'as' ? 'সঠিকতা' : language === 'hi' ? 'सटीकता' : language === 'mni' ? 'চুম্বা' : 'Accuracy'}
                 </p>
-                <p className="text-xl font-bold text-teal-850 mt-0.5">{finalScore.accuracy}%</p>
-                <span className="text-[9px] text-stone-500">
+                <p className="text-xl font-bold text-teal-850 dark:text-teal-400 mt-0.5">{finalScore.accuracy}%</p>
+                <span className="text-[9px] text-stone-500 dark:text-stone-400">
                   {moves} {language === 'as' ? 'মুঠ চেষ্টা' : language === 'hi' ? 'कुल चालें' : language === 'mni' ? 'মুৎ খোঙথাং' : 'total moves'}
                 </span>
               </div>
 
-              <div className="p-2 bg-white rounded-xl border border-stone-200 shadow-2xs">
-                <p className="text-[10px] text-stone-500 font-bold uppercase">
+              <div className="p-2 bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 shadow-2xs">
+                <p className="text-[10px] text-stone-500 dark:text-stone-400 font-bold uppercase">
                   {language === 'as' ? 'কাৰ্ড মোড' : language === 'hi' ? 'कठिनाई' : language === 'mni' ? 'মোদ' : 'Difficulty'}
                 </p>
-                <p className="text-xl font-bold text-stone-800 mt-0.5">{difficulty}</p>
-                <span className="text-[9px] text-stone-500">
+                <p className="text-xl font-bold text-stone-800 dark:text-stone-200 mt-0.5">{difficulty}</p>
+                <span className="text-[9px] text-stone-500 dark:text-stone-400">
                   {totalPairs} {language === 'as' ? 'যোৰা' : language === 'hi' ? 'जोड़े' : language === 'mni' ? 'যোৰা' : 'pairs'}
                 </span>
               </div>
 
-              <div className="p-2 bg-white rounded-xl border border-stone-200 shadow-2xs">
-                <p className="text-[10px] text-stone-500 font-bold uppercase">
+              <div className="p-2 bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 shadow-2xs">
+                <p className="text-[10px] text-stone-500 dark:text-stone-400 font-bold uppercase">
                   {language === 'as' ? 'সময়' : language === 'hi' ? 'समय' : language === 'mni' ? 'মতম' : 'Time'}
                 </p>
-                <p className="text-xl font-bold text-amber-600 mt-0.5">
+                <p className="text-xl font-bold text-amber-600 dark:text-amber-400 mt-0.5">
                   {Math.round(finalScore.completionTimeMs / 1000)}s
                 </p>
-                <span className="text-[9px] text-stone-500">
+                <span className="text-[9px] text-stone-500 dark:text-stone-400">
                   {Math.round(finalScore.reactionTimeMs / 1000)}s/turn
                 </span>
               </div>
@@ -624,16 +624,16 @@ export const MemoryTilesGame: React.FC<MemoryTilesGameProps> = ({
                     disabled={isProcessingMismatch || tile.isMatched}
                     className={`h-28 sm:h-32 rounded-2xl flex flex-col items-center justify-between p-1.5 sm:p-2 border-2 transition-all transform active:scale-95 shadow-2xs relative select-none overflow-hidden ${
                       tile.isMatched
-                        ? 'bg-gradient-to-b from-emerald-50 to-teal-50 border-emerald-400 text-teal-950 shadow-xs cursor-default ring-2 ring-emerald-200'
+                        ? 'bg-gradient-to-b from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border-emerald-400 dark:border-emerald-600 text-teal-950 dark:text-teal-200 shadow-xs cursor-default ring-2 ring-emerald-200 dark:ring-emerald-800'
                         : isRevealed
-                        ? 'bg-amber-50 border-amber-400 text-stone-900 ring-2 ring-amber-200'
-                        : 'bg-white border-stone-300 hover:border-teal-700 hover:shadow-xs cursor-pointer'
+                        ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600 text-stone-900 dark:text-stone-100 ring-2 ring-amber-200 dark:ring-amber-800'
+                        : 'bg-white dark:bg-stone-800 border-stone-300 dark:border-stone-700 hover:border-teal-700 hover:shadow-xs cursor-pointer'
                     }`}
                   >
                     {isRevealed ? (
                       <div className="flex flex-col items-center justify-between w-full h-full animate-in fade-in zoom-in">
                         {/* Real Image Container */}
-                        <div className="w-full h-16 sm:h-18 rounded-xl overflow-hidden bg-stone-100 relative">
+                        <div className="w-full h-16 sm:h-18 rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-700 relative">
                           <img
                             src={tile.image}
                             alt={displayName}
@@ -648,21 +648,21 @@ export const MemoryTilesGame: React.FC<MemoryTilesGameProps> = ({
                           </span>
                         </div>
 
-                        <span className="text-[10px] sm:text-[11px] font-bold text-stone-800 text-center leading-tight truncate w-full px-0.5 mt-1">
+                        <span className="text-[10px] sm:text-[11px] font-bold text-stone-800 dark:text-stone-200 text-center leading-tight truncate w-full px-0.5 mt-1">
                           {displayName}
                         </span>
 
-                        <span className="text-[9px] text-teal-850 font-medium truncate max-w-full">
+                        <span className="text-[9px] text-teal-850 dark:text-teal-400 font-medium truncate max-w-full">
                           {tile.category}
                         </span>
                       </div>
                     ) : (
                       /* Card Back Face */
-                      <div className="flex flex-col items-center justify-center w-full h-full text-stone-400 hover:text-teal-800 transition-colors">
-                        <div className="w-10 h-10 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-lg mb-1">
+                      <div className="flex flex-col items-center justify-center w-full h-full text-stone-400 dark:text-stone-500 hover:text-teal-800 dark:hover:text-teal-400 transition-colors">
+                        <div className="w-10 h-10 rounded-xl bg-stone-100 dark:bg-stone-700 border border-stone-200 dark:border-stone-600 flex items-center justify-center text-lg mb-1">
                           🎴
                         </div>
-                        <span className="text-[10px] font-bold tracking-wider uppercase text-stone-500">
+                        <span className="text-[10px] font-bold tracking-wider uppercase text-stone-500 dark:text-stone-400">
                           {language === 'as' ? 'কাৰ্ড' : language === 'hi' ? 'कार्ड' : language === 'mni' ? 'কার্দ' : 'Tile'} {index + 1}
                         </span>
                       </div>
@@ -680,7 +680,7 @@ export const MemoryTilesGame: React.FC<MemoryTilesGameProps> = ({
             </div>
 
             {/* Bottom Gentle Reassurance */}
-            <p className="text-xs text-stone-500 mt-4 text-center">
+            <p className="text-xs text-stone-500 dark:text-stone-400 mt-4 text-center">
               Take your time • Tap any face-down tile to uncover its treasure
             </p>
           </div>

@@ -163,7 +163,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, canClose 
     >
       <div
         id="auth-modal-container"
-        className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[90vh]"
+        className="bg-white dark:bg-stone-900 w-full max-w-md rounded-2xl shadow-2xl border border-stone-200 dark:border-stone-800 overflow-hidden flex flex-col max-h-[90vh]"
       >
         {/* Header */}
         <div className="bg-teal-850 text-white px-5 py-4 flex items-center justify-between">
@@ -195,7 +195,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, canClose 
         {/* Form Body */}
         <div className="p-5 overflow-y-auto flex-1">
           {/* Role selector */}
-          <div className="flex rounded-xl bg-stone-100 p-1 mb-4 border border-stone-200">
+          <div className="flex rounded-xl bg-stone-100 dark:bg-stone-800 p-1 mb-4 border border-stone-200 dark:border-stone-700">
             <button
               type="button"
               id="auth-role-patient-tab"
@@ -205,11 +205,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, canClose 
               }}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
                 role === 'PATIENT'
-                  ? 'bg-white text-teal-900 shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900'
+                  ? 'bg-white dark:bg-stone-700 text-teal-900 dark:text-teal-200 shadow-xs'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
               }`}
             >
-              <User className="w-3.5 h-3.5 text-teal-700" />
+              <User className="w-3.5 h-3.5 text-teal-700 dark:text-teal-300" />
               <span>Senior / Patient</span>
             </button>
             <button
@@ -221,25 +221,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, canClose 
               }}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
                 role === 'CAREGIVER'
-                  ? 'bg-white text-teal-900 shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900'
+                  ? 'bg-white dark:bg-stone-700 text-teal-900 dark:text-teal-200 shadow-xs'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
               }`}
             >
-              <Heart className="w-3.5 h-3.5 text-rose-600" />
+              <Heart className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
               <span>Family Caregiver</span>
             </button>
           </div>
 
           {/* Feedback alerts */}
           {error && (
-            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-start gap-2">
+            <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl text-xs text-rose-800 dark:text-rose-300 flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
           {successMessage && (
-            <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-start gap-2">
+            <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
               <span>{successMessage}</span>
             </div>
@@ -249,7 +249,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, canClose 
             {mode === 'REGISTER' && (
               <>
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
                     Full Name
                   </label>
                   <input
@@ -259,13 +259,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, canClose 
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder={role === 'PATIENT' ? 'e.g. Aruna Baruah' : 'e.g. Rahul Baruah'}
-                    className="w-full px-3 py-2 text-sm border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none"
+                    className="w-full px-3 py-2 text-sm border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
+                    <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
                       Username
                     </label>
                     <input
@@ -275,11 +275,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, canClose 
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       placeholder="e.g. aruna72"
-                      className="w-full px-3 py-2 text-sm border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none"
+                      className="w-full px-3 py-2 text-sm border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
+                    <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
                       Mobile Number
                     </label>
                     <input
@@ -289,7 +289,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, canClose 
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="10-digit number"
-                      className="w-full px-3 py-2 text-sm border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none"
+                      className="w-full px-3 py-2 text-sm border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -297,24 +297,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, canClose 
                 {role === 'PATIENT' ? (
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs font-semibold text-stone-700 mb-1">Age</label>
+                      <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">Age</label>
                       <input
                         id="register-age-input"
                         type="number"
                         value={age}
                         onChange={(e) => setAge(e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none"
+                        className="w-full px-3 py-2 text-sm border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-stone-700 mb-1">
+                      <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
                         State (NER)
                       </label>
                       <select
                         id="register-state-select"
                         value={stateName}
                         onChange={(e) => setStateName(e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-white"
+                        className="w-full px-3 py-2 text-sm border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100"
                       >
                         <option value="Assam">Assam</option>
                         <option value="Manipur">Manipur</option>
@@ -329,7 +329,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, canClose 
                   </div>
                 ) : (
                   <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
+                    <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
                       Relation to Loved One
                     </label>
                     <input
@@ -338,7 +338,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, canClose 
                       value={relation}
                       onChange={(e) => setRelation(e.target.value)}
                       placeholder="e.g. Son, Daughter, Spouse"
-                      className="w-full px-3 py-2 text-sm border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none"
+                      className="w-full px-3 py-2 text-sm border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none"
                     />
                   </div>
                 )}
@@ -347,7 +347,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, canClose 
 
             {mode === 'LOGIN' && (
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
+                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
                   Mobile Number or Username
                 </label>
                 <div className="relative">
@@ -359,14 +359,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, canClose 
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     placeholder="Enter 10-digit number or username"
-                    className="w-full pl-9 pr-3 py-2 text-sm border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none"
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none"
                   />
                 </div>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
+              <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
                 Password / Safe PIN
               </label>
               <div className="relative">
@@ -378,7 +378,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, canClose 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your safe password"
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-stone-300 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none"
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 rounded-xl focus:ring-2 focus:ring-teal-700 focus:outline-none"
                 />
               </div>
             </div>
@@ -401,9 +401,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, canClose 
           </form>
 
           {/* Toggle Login/Register */}
-          <div className="mt-4 pt-3 border-t border-stone-200 text-center">
+          <div className="mt-4 pt-3 border-t border-stone-200 dark:border-stone-800 text-center">
             {mode === 'LOGIN' ? (
-              <p className="text-xs text-stone-600">
+              <p className="text-xs text-stone-600 dark:text-stone-400">
                 Don’t have an account yet?{' '}
                 <button
                   type="button"
@@ -412,13 +412,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, canClose 
                     setMode('REGISTER');
                     setError(null);
                   }}
-                  className="font-semibold text-teal-800 hover:underline"
+                  className="font-semibold text-teal-800 dark:text-teal-400 hover:underline"
                 >
                   Register here
                 </button>
               </p>
             ) : (
-              <p className="text-xs text-stone-600">
+              <p className="text-xs text-stone-600 dark:text-stone-400">
                 Already have an account?{' '}
                 <button
                   type="button"
@@ -427,7 +427,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, canClose 
                     setMode('LOGIN');
                     setError(null);
                   }}
-                  className="font-semibold text-teal-800 hover:underline"
+                  className="font-semibold text-teal-800 dark:text-teal-400 hover:underline"
                 >
                   Sign in
                 </button>

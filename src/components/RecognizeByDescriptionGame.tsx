@@ -236,7 +236,7 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
   return (
     <div
       id="recognize-game-container"
-      className="fixed inset-0 z-50 bg-[#FAF8F5] flex flex-col overflow-y-auto"
+      className="fixed inset-0 z-50 bg-[#FAF8F5] dark:bg-[#0D1117] flex flex-col overflow-y-auto"
     >
       {/* Top Header */}
       <header className="bg-teal-850 text-white px-4 py-3 sm:px-6 flex items-center justify-between shadow-xs sticky top-0 z-20">
@@ -309,7 +309,7 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
         {!isFinished ? (
           <div className="space-y-5">
             {/* Top Control Bar: Category & Difficulty & Timer */}
-            <div className="bg-white p-3.5 sm:p-4 rounded-3xl border border-stone-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+            <div className="bg-white dark:bg-stone-900 p-3.5 sm:p-4 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-2xs flex flex-wrap items-center justify-between gap-3">
               {/* Category Pills with Icons */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
                 <button
@@ -320,7 +320,7 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1 shrink-0 ${
                     categoryFilter === 'all'
                       ? 'bg-teal-850 text-white shadow-2xs'
-                      : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                      : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700'
                   }`}
                 >
                   <Sparkles className="w-3.5 h-3.5" />
@@ -334,7 +334,7 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1 shrink-0 ${
                     categoryFilter === 'music'
                       ? 'bg-amber-600 text-white shadow-2xs'
-                      : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                      : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700'
                   }`}
                 >
                   <Music className="w-3.5 h-3.5" />
@@ -348,7 +348,7 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1 shrink-0 ${
                     categoryFilter === 'craft'
                       ? 'bg-rose-600 text-white shadow-2xs'
-                      : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                      : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700'
                   }`}
                 >
                   <Scissors className="w-3.5 h-3.5" />
@@ -362,7 +362,7 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1 shrink-0 ${
                     categoryFilter === 'nature'
                       ? 'bg-emerald-700 text-white shadow-2xs'
-                      : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                      : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700'
                   }`}
                 >
                   <Trees className="w-3.5 h-3.5" />
@@ -372,8 +372,8 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
 
               {/* Difficulty & Timer */}
               <div className="flex items-center gap-3 text-xs">
-                <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl">
-                  <span className="text-[10px] text-stone-500 font-bold uppercase px-1">Choices:</span>
+                <div className="flex items-center gap-1 bg-stone-100 dark:bg-stone-800 p-1 rounded-xl">
+                  <span className="text-[10px] text-stone-500 dark:text-stone-400 font-bold uppercase px-1">Choices:</span>
                   {[2, 3, 4].map((cnt) => (
                     <button
                       key={cnt}
@@ -383,8 +383,8 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
                       }}
                       className={`px-2.5 py-1 rounded-lg font-bold ${
                         difficulty === cnt
-                          ? 'bg-white text-teal-850 shadow-2xs'
-                          : 'text-stone-500 hover:text-stone-800'
+                          ? 'bg-white dark:bg-stone-700 text-teal-850 dark:text-teal-300 shadow-2xs'
+                          : 'text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200'
                       }`}
                     >
                       {cnt}
@@ -392,8 +392,8 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
                   ))}
                 </div>
 
-                <div className="flex items-center gap-1 font-mono text-stone-600 bg-stone-100 px-3 py-1.5 rounded-xl border border-stone-200">
-                  <Timer className="w-3.5 h-3.5 text-stone-500" />
+                <div className="flex items-center gap-1 font-mono text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700">
+                  <Timer className="w-3.5 h-3.5 text-stone-500 dark:text-stone-400" />
                   <span>{formatTime(elapsedSeconds)}</span>
                 </div>
               </div>
@@ -403,14 +403,14 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
             {targetItem && (
               <div
                 id="riddle-clue-card"
-                className="bg-gradient-to-br from-white via-amber-50/50 to-amber-100/40 rounded-3xl p-6 sm:p-7 border-2 border-amber-300 shadow-xs relative"
+                className="bg-gradient-to-br from-white via-amber-50/50 to-amber-100/40 dark:from-stone-900 dark:via-stone-900 dark:to-amber-950/20 rounded-3xl p-6 sm:p-7 border-2 border-amber-300 dark:border-amber-700/60 shadow-xs relative"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider bg-amber-200 text-amber-950 px-3 py-1 rounded-full border border-amber-300">
+                    <span className="text-[11px] font-bold uppercase tracking-wider bg-amber-200 dark:bg-amber-900/60 text-amber-950 dark:text-amber-200 px-3 py-1 rounded-full border border-amber-300 dark:border-amber-700">
                       Riddle {currentRound + 1} of {totalRounds}
                     </span>
-                    <span className="text-[11px] font-semibold text-teal-850 bg-teal-100 px-3 py-1 rounded-full">
+                    <span className="text-[11px] font-semibold text-teal-850 dark:text-teal-300 bg-teal-100 dark:bg-teal-950/60 px-3 py-1 rounded-full">
                       {targetItem.categoryLabel}
                     </span>
                   </div>
@@ -433,7 +433,7 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
                     <button
                       id="read-options-btn"
                       onClick={handleReadOptionsAloud}
-                      className="flex items-center gap-1 text-xs text-stone-600 hover:text-stone-900 bg-white/80 border border-stone-300 px-3 py-1.5 rounded-xl transition-colors"
+                      className="flex items-center gap-1 text-xs text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white bg-white/80 dark:bg-stone-800/80 border border-stone-300 dark:border-stone-700 px-3 py-1.5 rounded-xl transition-colors"
                       title="Read option titles aloud"
                     >
                       <span>Read Options</span>
@@ -442,16 +442,16 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
                 </div>
 
                 <div className="mt-2">
-                  <p className="font-serif text-lg sm:text-2xl text-stone-900 leading-relaxed font-semibold italic">
+                  <p className="font-serif text-lg sm:text-2xl text-stone-900 dark:text-stone-100 leading-relaxed font-semibold italic">
                     "{targetItem.clue}"
                   </p>
                 </div>
 
                 {/* Cultural Origin Note & Hint Button */}
-                <div className="mt-4 pt-4 border-t border-amber-200/60 flex flex-wrap items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-2 text-stone-600">
-                    <span className="font-semibold text-teal-850">Cultural Origin:</span>
-                    <span className="bg-white/80 px-2.5 py-0.5 rounded-full border border-amber-200 font-medium">
+                <div className="mt-4 pt-4 border-t border-amber-200/60 dark:border-amber-900/40 flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2 text-stone-600 dark:text-stone-400">
+                    <span className="font-semibold text-teal-850 dark:text-teal-400">Cultural Origin:</span>
+                    <span className="bg-white/80 dark:bg-stone-800/80 px-2.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-800 font-medium text-stone-700 dark:text-stone-300">
                       {targetItem.culturalTag}
                     </span>
                   </div>
@@ -464,14 +464,14 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
                           speechService.speak(`Gentle hint: ${targetItem.hint}`, { rate: 0.9 });
                         }
                       }}
-                      className="flex items-center gap-1 text-teal-850 hover:text-teal-950 font-semibold underline underline-offset-2"
+                      className="flex items-center gap-1 text-teal-850 dark:text-teal-400 hover:text-teal-950 dark:hover:text-teal-300 font-semibold underline underline-offset-2"
                     >
                       <HelpCircle className="w-4 h-4" />
                       <span>Need a gentle hint?</span>
                     </button>
                   ) : (
-                    <div className="bg-amber-100/80 border border-amber-300 text-amber-950 px-3.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-2 animate-in fade-in">
-                      <Sparkles className="w-4 h-4 text-amber-700 shrink-0" />
+                    <div className="bg-amber-100/80 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-200 px-3.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-2 animate-in fade-in">
+                      <Sparkles className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0" />
                       <span>
                         <strong>Gentle Hint:</strong> {targetItem.hint}
                       </span>
@@ -483,7 +483,7 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
 
             {/* Answer Options Grid with Real Images */}
             <div className="space-y-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-stone-500">
+              <p className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
                 Which treasured object matches this description?
               </p>
 
@@ -500,20 +500,20 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
                   const isSelected = selectedOptionId === item.id;
                   const isItemTarget = item.id === targetItem?.id;
 
-                  let borderStyle = 'border-stone-200 hover:border-teal-700';
-                  let bgStyle = 'bg-white hover:bg-stone-50';
+                  let borderStyle = 'border-stone-200 dark:border-stone-800 hover:border-teal-700 dark:hover:border-teal-500';
+                  let bgStyle = 'bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800/60';
 
                   if (isSelected) {
                     if (isCorrect) {
-                      borderStyle = 'border-emerald-500 ring-4 ring-emerald-200/80';
-                      bgStyle = 'bg-emerald-50';
+                      borderStyle = 'border-emerald-500 ring-4 ring-emerald-200/80 dark:ring-emerald-800/80';
+                      bgStyle = 'bg-emerald-50 dark:bg-emerald-950/40';
                     } else {
-                      borderStyle = 'border-rose-400 ring-4 ring-rose-100';
-                      bgStyle = 'bg-rose-50';
+                      borderStyle = 'border-rose-400 ring-4 ring-rose-100 dark:ring-rose-950/60';
+                      bgStyle = 'bg-rose-50 dark:bg-rose-950/40';
                     }
                   } else if (isCorrect && isItemTarget) {
-                    borderStyle = 'border-emerald-500 ring-2 ring-emerald-300';
-                    bgStyle = 'bg-emerald-50/70';
+                    borderStyle = 'border-emerald-500 ring-2 ring-emerald-300 dark:ring-emerald-700';
+                    bgStyle = 'bg-emerald-50/70 dark:bg-emerald-950/30';
                   }
 
                   return (
@@ -524,7 +524,7 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
                       className={`rounded-3xl p-4 border-2 ${borderStyle} ${bgStyle} shadow-2xs cursor-pointer transition-all duration-200 flex flex-col justify-between group select-none min-h-[220px]`}
                     >
                       {/* Image Container with Visual Fallback */}
-                      <div className="relative w-full h-32 rounded-2xl overflow-hidden bg-stone-100 border border-stone-200/80 mb-3 group-hover:scale-[1.02] transition-transform">
+                      <div className="relative w-full h-32 rounded-2xl overflow-hidden bg-stone-100 dark:bg-stone-800 border border-stone-200/80 dark:border-stone-700/80 mb-3 group-hover:scale-[1.02] transition-transform">
                         <img
                           src={item.image}
                           alt={item.name}
@@ -544,31 +544,31 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
                       {/* Title and Cultural Details */}
                       <div>
                         <div className="flex items-center justify-between gap-1">
-                          <h3 className="font-serif font-bold text-sm sm:text-base text-stone-900 leading-snug">
+                          <h3 className="font-serif font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100 leading-snug">
                             {item.name}
                           </h3>
                         </div>
-                        <p className="text-xs text-teal-850 font-medium font-serif mt-0.5">
+                        <p className="text-xs text-teal-850 dark:text-teal-400 font-medium font-serif mt-0.5">
                           {item.localName}
                         </p>
-                        <p className="text-[11px] text-stone-500 mt-1 line-clamp-2">
+                        <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-1 line-clamp-2">
                           {item.culturalTag}
                         </p>
                       </div>
 
                       {/* State Feedback Indicator */}
-                      <div className="mt-3 pt-2 border-t border-stone-100 flex items-center justify-between">
-                        <span className="text-[11px] text-stone-500 group-hover:text-teal-850 font-semibold">
+                      <div className="mt-3 pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between">
+                        <span className="text-[11px] text-stone-500 dark:text-stone-400 group-hover:text-teal-850 dark:group-hover:text-teal-400 font-semibold">
                           {language === 'as' ? 'বাছি লবলৈ টিপক' : language === 'hi' ? 'चुनने के लिए टैप करें' : language === 'mni' ? 'খন্নবা নমবীয়ু' : 'Tap to select'}
                         </span>
                         {isSelected && isCorrect && (
-                          <span className="flex items-center gap-1 text-xs text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded-full">
+                          <span className="flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             {language === 'as' ? 'সঠিক!' : language === 'hi' ? 'सही जवाब!' : language === 'mni' ? 'চুম্মে!' : 'Correct!'}
                           </span>
                         )}
                         {isSelected && !isCorrect && (
-                          <span className="text-xs text-rose-700 font-bold bg-rose-100 px-2 py-0.5 rounded-full">
+                          <span className="text-xs text-rose-700 dark:text-rose-300 font-bold bg-rose-100 dark:bg-rose-950/60 px-2 py-0.5 rounded-full">
                             {language === 'as' ? 'পুনৰ চেষ্টা কৰক' : language === 'hi' ? 'फिर प्रयास करें' : language === 'mni' ? 'অমুক হন্না হৌবীয়ু' : 'Try again'}
                           </span>
                         )}
@@ -584,14 +584,14 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
               <div
                 className={`p-5 rounded-3xl border-2 animate-in fade-in flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
                   isCorrect
-                    ? 'bg-emerald-50 border-emerald-400 text-emerald-950'
-                    : 'bg-amber-50 border-amber-300 text-amber-950'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-700 text-emerald-950 dark:text-emerald-200'
+                    : 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
-                      isCorrect ? 'bg-emerald-200 text-emerald-850' : 'bg-amber-200 text-amber-850'
+                      isCorrect ? 'bg-emerald-200 dark:bg-emerald-900/60 text-emerald-850 dark:text-emerald-300' : 'bg-amber-200 dark:bg-amber-900/60 text-amber-850 dark:text-amber-300'
                     }`}
                   >
                     {isCorrect ? (
@@ -650,17 +650,17 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
           /* Final Results Screen */
           <div
             id="recognize-results-screen"
-            className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm text-center space-y-6 animate-in zoom-in-95 max-w-lg mx-auto"
+            className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 border border-stone-200 dark:border-stone-800 shadow-sm text-center space-y-6 animate-in zoom-in-95 max-w-lg mx-auto"
           >
-            <div className="w-16 h-16 rounded-3xl bg-amber-100 text-amber-900 mx-auto flex items-center justify-center text-3xl shadow-xs border border-amber-300">
-              <Trophy className="w-8 h-8 text-amber-700" />
+            <div className="w-16 h-16 rounded-3xl bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 mx-auto flex items-center justify-center text-3xl shadow-xs border border-amber-300 dark:border-amber-800">
+              <Trophy className="w-8 h-8 text-amber-700 dark:text-amber-400" />
             </div>
 
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider bg-teal-100 text-teal-850 px-3 py-1 rounded-full">
+              <span className="text-[11px] font-bold uppercase tracking-wider bg-teal-100 dark:bg-teal-950/40 text-teal-850 dark:text-teal-300 px-3 py-1 rounded-full">
                 {language === 'as' ? 'মানসিক অনুশীলন সম্পন্ন' : language === 'hi' ? 'संज्ञानात्मक अभ्यास संपन्न' : language === 'mni' ? 'এক্সরসাইজ লোইশিনখ্রে' : 'Cognitive Exercise Complete'}
               </span>
-              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 mt-2">
+              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 dark:text-stone-100 mt-2">
                 {language === 'as'
                   ? `সুন্দৰ কাম, ${patient?.preferredName || 'জ্যেষ্ঠ'}!`
                   : language === 'hi'
@@ -669,7 +669,7 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
                   ? `য়াম্না ফরে, ${patient?.preferredName || 'সিনিয়র'}!`
                   : `Well Done, ${patient?.preferredName || 'Senior'}!`}
               </h2>
-              <p className="text-xs sm:text-sm text-stone-600 mt-1 max-w-sm mx-auto">
+              <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400 mt-1 max-w-sm mx-auto">
                 {language === 'as'
                   ? 'আপুনি ঐতিহ্য আৰু লোকসংস্কৃতিৰ বস্তুসমূহ সুন্দৰভাৱে চিনাক্ত কৰিলে।'
                   : language === 'hi'
@@ -682,25 +682,25 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
 
             {/* Score Grid */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-[#FAF8F5] p-3.5 rounded-2xl border border-stone-200">
-                <p className="text-[10px] text-stone-500 font-bold uppercase">
+              <div className="bg-[#FAF8F5] dark:bg-stone-800 p-3.5 rounded-2xl border border-stone-200 dark:border-stone-700">
+                <p className="text-[10px] text-stone-500 dark:text-stone-400 font-bold uppercase">
                   {language === 'as' ? 'সঠিকতা' : language === 'hi' ? 'सटीकता' : language === 'mni' ? 'চুম্বা' : 'Accuracy'}
                 </p>
-                <p className="text-2xl font-bold text-teal-850 mt-1">
+                <p className="text-2xl font-bold text-teal-850 dark:text-teal-400 mt-1">
                   {finalResult?.accuracy ?? 90}%
                 </p>
               </div>
-              <div className="bg-[#FAF8F5] p-3.5 rounded-2xl border border-stone-200">
-                <p className="text-[10px] text-stone-500 font-bold uppercase">
+              <div className="bg-[#FAF8F5] dark:bg-stone-800 p-3.5 rounded-2xl border border-stone-200 dark:border-stone-700">
+                <p className="text-[10px] text-stone-500 dark:text-stone-400 font-bold uppercase">
                   {language === 'as' ? 'মুঠ পৰ্ব' : language === 'hi' ? 'दौर' : language === 'mni' ? 'রাউন্দ' : 'Rounds'}
                 </p>
-                <p className="text-2xl font-bold text-stone-800 mt-1">{totalRounds}</p>
+                <p className="text-2xl font-bold text-stone-800 dark:text-stone-200 mt-1">{totalRounds}</p>
               </div>
-              <div className="bg-[#FAF8F5] p-3.5 rounded-2xl border border-stone-200">
-                <p className="text-[10px] text-stone-500 font-bold uppercase">
+              <div className="bg-[#FAF8F5] dark:bg-stone-800 p-3.5 rounded-2xl border border-stone-200 dark:border-stone-700">
+                <p className="text-[10px] text-stone-500 dark:text-stone-400 font-bold uppercase">
                   {language === 'as' ? 'সময়' : language === 'hi' ? 'समय' : language === 'mni' ? 'মতম' : 'Time'}
                 </p>
-                <p className="text-2xl font-bold text-stone-800 mt-1">
+                <p className="text-2xl font-bold text-stone-800 dark:text-stone-200 mt-1">
                   {formatTime(elapsedSeconds)}
                 </p>
               </div>
@@ -708,8 +708,8 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
 
             {/* Caregiver Synced note */}
             {patient?.hasCaregiver && (
-              <div className="bg-teal-50 border border-teal-200 rounded-2xl p-3 text-xs text-teal-900 flex items-center gap-2">
-                <Award className="w-4 h-4 text-teal-700 shrink-0" />
+              <div className="bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 rounded-2xl p-3 text-xs text-teal-900 dark:text-teal-200 flex items-center gap-2">
+                <Award className="w-4 h-4 text-teal-700 dark:text-teal-400 shrink-0" />
                 <span>
                   {language === 'as'
                     ? `আপোনাৰ যত্নশীল ${patient.caregiverName || 'ছাৰ্কেল'}ৰ বাবে অগ্ৰগতি সংৰক্ষণ কৰা হ’ল।`
@@ -734,7 +734,7 @@ export const RecognizeByDescriptionGame: React.FC<RecognizeGameProps> = ({
                   setElapsedSeconds(0);
                   setupRound(0);
                 }}
-                className="w-full sm:w-auto px-6 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs sm:text-sm rounded-xl transition-colors flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-6 py-2.5 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 font-bold text-xs sm:text-sm rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>

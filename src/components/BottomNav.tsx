@@ -41,7 +41,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     return (
       <nav
         id="patient-bottom-nav"
-        className="fixed bottom-0 left-0 right-0 z-30 bg-[#FAF8F5]/95 backdrop-blur border-t border-stone-200 px-2 py-1.5 transition-colors"
+        className="fixed bottom-0 left-0 right-0 z-30 bg-[#FAF8F5]/95 dark:bg-[#161B22]/95 backdrop-blur border-t border-stone-200 dark:border-stone-800 px-2 py-1.5 transition-colors"
       >
         <div className="max-w-xl mx-auto flex items-center justify-around gap-1">
           {patientNavItems.map((item) => {
@@ -54,11 +54,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 onClick={() => onSelectPatientTab(item.id)}
                 className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all min-w-[54px] ${
                   isActive
-                    ? 'text-teal-900 font-bold bg-teal-100/80 shadow-xs'
-                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100/60 font-medium'
+                    ? 'text-teal-900 dark:text-teal-200 font-bold bg-teal-100/80 dark:bg-teal-950/80 shadow-xs'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100/60 dark:hover:bg-stone-800/60 font-medium'
                 }`}
               >
-                <Icon className={`w-5 h-5 mb-0.5 ${isActive ? 'text-teal-850 scale-105' : 'text-stone-500'}`} />
+                <Icon className={`w-5 h-5 mb-0.5 ${isActive ? 'text-teal-850 dark:text-teal-400 scale-105' : 'text-stone-500 dark:text-stone-400'}`} />
                 <span className="text-[11px] leading-tight tracking-tight whitespace-nowrap">
                   {item.label}
                 </span>
@@ -82,7 +82,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   return (
     <nav
       id="caregiver-bottom-nav"
-      className="fixed bottom-0 left-0 right-0 z-30 bg-[#FAF8F5]/95 backdrop-blur border-t border-stone-200 px-2 py-1.5 transition-colors"
+      className="fixed bottom-0 left-0 right-0 z-30 bg-[#FAF8F5]/95 dark:bg-[#161B22]/95 backdrop-blur border-t border-stone-200 dark:border-stone-800 px-2 py-1.5 transition-colors"
     >
       <div className="max-w-xl mx-auto flex items-center justify-around gap-1">
         {caregiverNavItems.map((item) => {
@@ -95,11 +95,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               onClick={() => onSelectCaregiverTab(item.id)}
               className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all min-w-[54px] ${
                 isActive
-                  ? 'text-teal-900 font-bold bg-teal-100/80 shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100/60 font-medium'
+                  ? 'text-teal-900 dark:text-teal-200 font-bold bg-teal-100/80 dark:bg-teal-950/80 shadow-xs'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100/60 dark:hover:bg-stone-800/60 font-medium'
               }`}
             >
-              <Icon className={`w-5 h-5 mb-0.5 ${isActive ? 'text-teal-850 scale-105' : 'text-stone-500'}`} />
+              <Icon className={`w-5 h-5 mb-0.5 ${isActive ? 'text-teal-850 dark:text-teal-400 scale-105' : 'text-stone-500 dark:text-stone-400'}`} />
               <span className="text-[11px] leading-tight tracking-tight whitespace-nowrap">
                 {item.label}
               </span>

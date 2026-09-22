@@ -63,6 +63,7 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
   const startTimeRef = useRef<number>(Date.now());
   const questionStartTimeRef = useRef<number>(Date.now());
   const reactionTimesRef = useRef<number[]>([]);
+  const lastLoadedKeyRef = useRef<string>('');
 
   // Fallback question generator in case network or AI service is unavailable
   const generateClientFallbackQuestions = (): PersonalQuizQuestion[] => {
@@ -238,14 +239,41 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
     questionStartTimeRef.current = Date.now();
 
     try {
+      // Strip heavy binary base64 data URLs before sending to backend to prevent token & bandwidth overflow
+      const cleanMemories = memories.map((m) => ({
+        id: m.id,
+        title: m.title,
+        category: m.category,
+        region: m.region,
+        dateLabel: m.dateLabel,
+        story: typeof m.story === 'string' ? m.story.slice(0, 300) : '',
+        interactiveQuestion: m.interactiveQuestion,
+        imageUrl: m.imageUrl && !m.imageUrl.startsWith('data:') ? m.imageUrl : undefined,
+      }));
+
+      const cleanPeople = people.map((p) => ({
+        id: p.id,
+        name: p.name,
+        relationship: p.relationship,
+        likes: p.likes,
+        dislikes: p.dislikes,
+        location: p.location,
+        birthday: p.birthday,
+        marriageDate: p.marriageDate,
+        importantDates: p.importantDates,
+        personality: p.personality,
+        description: typeof p.description === 'string' ? p.description.slice(0, 150) : undefined,
+        imageUrl: p.imageUrl && !p.imageUrl.startsWith('data:') ? p.imageUrl : undefined,
+      }));
+
       const response = await fetch('/api/ai/memory-quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           patientId: patient?.id,
           patientName: patient?.preferredName || patient?.fullName,
-          memories,
-          people,
+          memories: cleanMemories,
+          people: cleanPeople,
           language: language || 'en',
         }),
       });
@@ -253,13 +281,26 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data.questions) && data.questions.length > 0) {
-          setQuestions(data.questions);
+          // Hydrate image URLs on client side if missing
+          const hydratedQuestions = data.questions.map((q: PersonalQuizQuestion) => {
+            if (!q.imageUrl) {
+              if (q.type === 'person' || (!q.type && q.sourceTitle)) {
+                const foundP = people.find((p) => p.name?.toLowerCase().trim() === q.sourceTitle?.toLowerCase().trim());
+                if (foundP?.imageUrl) return { ...q, imageUrl: foundP.imageUrl };
+              }
+              const foundM = memories.find((m) => m.title?.toLowerCase().trim() === q.sourceTitle?.toLowerCase().trim());
+              if (foundM?.imageUrl) return { ...q, imageUrl: foundM.imageUrl };
+            }
+            return q;
+          });
+
+          setQuestions(hydratedQuestions);
           setIsLoading(false);
           return;
         }
       }
-    } catch (e) {
-      console.warn('Error fetching AI questions, falling back to local questions:', e);
+    } catch {
+      // Local fallback silently handles network or service interruptions
     }
 
     // Fallback if network or AI service fails
@@ -269,8 +310,13 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
   };
 
   useEffect(() => {
+    const loadKey = `${patient?.id || 'default'}-${memories.length}-${people.length}-${language}`;
+    if (lastLoadedKeyRef.current === loadKey && questions.length > 0) {
+      return;
+    }
+    lastLoadedKeyRef.current = loadKey;
     loadQuestions();
-  }, [memories, people, language]);
+  }, [patient?.id, memories.length, people.length, language]);
 
   const currentQuestion: PersonalQuizQuestion | undefined = questions[currentIndex];
 
@@ -386,14 +432,14 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
       >
         <div
           id="personal-memory-quiz-blank-card"
-          className="bg-[#FAF8F5] rounded-3xl max-w-lg w-full p-6 sm:p-8 border border-stone-200 shadow-xl flex flex-col items-center text-center space-y-5 animate-in fade-in zoom-in-95"
+          className="bg-[#FAF8F5] dark:bg-stone-900 rounded-3xl max-w-lg w-full p-6 sm:p-8 border border-stone-200 dark:border-stone-800 shadow-xl flex flex-col items-center text-center space-y-5 animate-in fade-in zoom-in-95"
         >
-          <div className="w-16 h-16 rounded-3xl bg-amber-100 text-amber-900 flex items-center justify-center text-3xl border border-amber-300 shadow-xs">
+          <div className="w-16 h-16 rounded-3xl bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 flex items-center justify-center text-3xl border border-amber-300 dark:border-amber-800 shadow-xs">
             📖
           </div>
 
           <div className="space-y-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider bg-amber-100 text-amber-950 px-3 py-1 rounded-full border border-amber-300">
+            <span className="text-[11px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/50 text-amber-950 dark:text-amber-200 px-3 py-1 rounded-full border border-amber-300 dark:border-amber-800">
               {language === 'as'
                 ? 'স্মৃতি আৰু আপোনজনৰ অপেক্ষা'
                 : language === 'hi'
@@ -402,7 +448,7 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
                 ? 'নীংশিং নুমিৎশিং অমসুং ইমুংগী ঙাইরি'
                 : 'Awaiting Memories & Loved Ones'}
             </span>
-            <h2 className="text-xl sm:text-2xl font-serif font-bold text-stone-900">
+            <h2 className="text-xl sm:text-2xl font-serif font-bold text-stone-900 dark:text-stone-100">
               {language === 'as'
                 ? 'আপোনজন আৰু স্মৃতি কুইজ'
                 : language === 'hi'
@@ -411,7 +457,7 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
                 ? 'ইমুংগী মী অমসুং নীংশিং নুমিৎ ক্বিজ'
                 : 'Personal Memories & Loved Ones Quiz'}
             </h2>
-            <p className="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-md">
+            <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400 leading-relaxed max-w-md">
               {language === 'as'
                 ? 'এই খেলখন কেৱল আপোনাৰ বাবে, আপোনাৰ নিজৰ জীৱনৰ স্মৃতি, ফটো আৰু পৰিয়ালৰ ওপৰত প্ৰশ্ন সোধা হয়।'
                 : language === 'hi'
@@ -422,9 +468,9 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
             </p>
           </div>
 
-          <div className="p-4 bg-white rounded-2xl border border-stone-200 text-left text-xs text-stone-700 space-y-2 w-full">
-            <div className="flex items-center gap-2 font-semibold text-teal-900">
-              <Info className="w-4 h-4 text-teal-700 shrink-0" />
+          <div className="p-4 bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 text-left text-xs text-stone-700 dark:text-stone-300 space-y-2 w-full">
+            <div className="flex items-center gap-2 font-semibold text-teal-900 dark:text-teal-300">
+              <Info className="w-4 h-4 text-teal-700 dark:text-teal-400 shrink-0" />
               <span>
                 {language === 'as'
                   ? 'এই খেলখন কেনেকৈ আৰম্ভ কৰিব:'
@@ -435,7 +481,7 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
                   : 'How to unlock this game:'}
               </span>
             </div>
-            <p className="text-stone-600 leading-relaxed">
+            <p className="text-stone-600 dark:text-stone-400 leading-relaxed">
               {language === 'as'
                 ? 'স্মৃতি (Memories) টেবত অন্ততঃ এটা স্মৃতি বা পৰিয়ালৰ সদস্যৰ নাম যোগ কৰক। তাৰ পিছত সাথী এআই-য়ে স্বয়ংক্ৰিয়ভাৱে প্ৰশ্ন প্ৰস্তুত কৰিব!'
                 : language === 'hi'
@@ -470,7 +516,7 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
               id="close-blank-quiz-btn"
               type="button"
               onClick={onClose}
-              className="w-full sm:w-auto py-3 px-5 bg-stone-200 hover:bg-stone-300 text-stone-800 font-semibold text-sm rounded-xl transition-all cursor-pointer"
+              className="w-full sm:w-auto py-3 px-5 bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 font-semibold text-sm rounded-xl transition-all cursor-pointer"
             >
               {language === 'as'
                 ? 'কাৰ্যসূচীলৈ উভতি যাওক'
@@ -492,23 +538,23 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
   return (
     <div
       id="personal-memory-quiz-game-container"
-      className="fixed inset-0 z-50 bg-[#FAF8F5] overflow-y-auto flex flex-col"
+      className="fixed inset-0 z-50 bg-[#FAF8F5] dark:bg-[#0D1117] overflow-y-auto flex flex-col"
     >
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-stone-200 px-4 py-3 flex items-center justify-between shadow-2xs">
+      <header className="sticky top-0 z-10 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-800 px-4 py-3 flex items-center justify-between shadow-2xs">
         <div className="flex items-center gap-3">
           <button
             id="close-quiz-btn"
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition-all cursor-pointer"
+            className="p-2 rounded-xl text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all cursor-pointer"
             aria-label="Close Quiz"
           >
             <X className="w-5 h-5" />
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-serif font-bold text-stone-900">
+              <span className="text-xs font-serif font-bold text-stone-900 dark:text-stone-100">
                 {language === 'as'
                   ? 'আপোনজন আৰু স্মৃতি কুইজ'
                   : language === 'hi'
@@ -517,11 +563,11 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
                   ? 'ইমুংগী মী অমসুং নীংশিং নুমিৎ ক্বিজ'
                   : 'Loved Ones & Memories Quiz'}
               </span>
-              <span className="text-[10px] font-semibold bg-teal-100 text-teal-850 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-semibold bg-teal-100 dark:bg-teal-950/60 text-teal-850 dark:text-teal-300 px-2 py-0.5 rounded-full">
                 AI Reminiscence
               </span>
             </div>
-            <p className="text-[11px] text-stone-500 hidden sm:block">
+            <p className="text-[11px] text-stone-500 dark:text-stone-400 hidden sm:block">
               {language === 'as'
                 ? 'আপোনাৰ জীৱনৰ সুখদ কাহিনীৰ ৪-বিকল্প প্ৰশ্ন'
                 : language === 'hi'
@@ -535,7 +581,7 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
 
         <div className="flex items-center gap-2">
           {questions.length > 0 && !isFinished && (
-            <div className="flex items-center gap-2 bg-amber-50 border border-amber-300 text-amber-950 px-3 py-1 rounded-xl text-xs font-bold">
+            <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-200 px-3 py-1 rounded-xl text-xs font-bold">
               <span>{language === 'as' ? 'নম্বৰ:' : language === 'hi' ? 'स्कोर:' : language === 'mni' ? 'স্কোর:' : 'Score:'} {score}</span>
               <span className="text-amber-400">•</span>
               <span>
@@ -557,12 +603,12 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
         {isLoading ? (
           <div
             id="quiz-loading-state"
-            className="bg-white rounded-3xl p-8 sm:p-12 border border-stone-200 shadow-xs flex flex-col items-center text-center space-y-4 my-auto"
+            className="bg-white dark:bg-stone-900 rounded-3xl p-8 sm:p-12 border border-stone-200 dark:border-stone-800 shadow-xs flex flex-col items-center text-center space-y-4 my-auto"
           >
             <div className="w-16 h-16 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center text-3xl animate-bounce">
               ✨
             </div>
-            <h3 className="font-serif font-bold text-lg sm:text-xl text-stone-900">
+            <h3 className="font-serif font-bold text-lg sm:text-xl text-stone-900 dark:text-stone-100">
               {language === 'as'
                 ? 'আপোনাৰ স্মৃতিবোৰ একত্ৰিত কৰা হৈছে...'
                 : language === 'hi'
@@ -571,7 +617,7 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
                 ? 'অদোমগী নীংশিং নুমিৎশিং শেম-শারি...'
                 : 'Gathering Your Life Moments...'}
             </h3>
-            <p className="text-xs sm:text-sm text-stone-600 max-w-sm leading-relaxed">
+            <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400 max-w-sm leading-relaxed">
               {language === 'as'
                 ? 'সাথী এআই-য়ে আপোনাৰ স্মৃতি আৰু পৰিয়ালৰ পৰা মৰমৰ প্ৰশ্ন প্ৰস্তুত কৰি আছে।'
                 : language === 'hi'
@@ -585,13 +631,13 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
           /* Completion Summary View */
           <div
             id="quiz-completion-card"
-            className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm space-y-6 animate-in fade-in"
+            className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 border border-stone-200 dark:border-stone-800 shadow-sm space-y-6 animate-in fade-in"
           >
             <div className="text-center space-y-3">
-              <div className="w-20 h-20 mx-auto rounded-3xl bg-amber-100 text-amber-800 flex items-center justify-center text-4xl border border-amber-300 shadow-xs">
+              <div className="w-20 h-20 mx-auto rounded-3xl bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 flex items-center justify-center text-4xl border border-amber-300 dark:border-amber-800 shadow-xs">
                 🏆
               </div>
-              <span className="text-[11px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-950 px-3 py-1 rounded-full border border-emerald-300">
+              <span className="text-[11px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-200 px-3 py-1 rounded-full border border-emerald-300 dark:border-emerald-800">
                 {language === 'as'
                   ? 'স্মৃতি প্ৰশ্নোত্তৰী সমাপ্ত'
                   : language === 'hi'
@@ -600,7 +646,7 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
                   ? 'নীংশিং নুমিৎ লোইরে'
                   : 'Heartfelt Recollection Complete'}
               </span>
-              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900">
+              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 dark:text-stone-100">
                 {language === 'as'
                   ? 'সুন্দৰভাৱে স্মৃতিবোৰ মনত পেলালে!'
                   : language === 'hi'
@@ -609,7 +655,7 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
                   ? 'নীংশিং নুমিৎশিং ফজরনা নীংশিংলে!'
                   : 'Cherished Moments Remembered!'}
               </h2>
-              <p className="text-xs sm:text-sm text-stone-600 max-w-md mx-auto leading-relaxed">
+              <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400 max-w-md mx-auto leading-relaxed">
                 {language === 'as'
                   ? 'আজি আপুনি অতি মৰমেৰে পৰিয়াল আৰু স্মৃতিবোৰ পুনৰ উপলব্ধি কৰিলে।'
                   : language === 'hi'
@@ -622,27 +668,27 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
 
             {/* Score Metrics Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div className="p-4 bg-teal-50/70 border border-teal-200 rounded-2xl text-center">
-                <span className="text-xs text-teal-850 font-medium">
+              <div className="p-4 bg-teal-50/70 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800 rounded-2xl text-center">
+                <span className="text-xs text-teal-850 dark:text-teal-400 font-medium">
                   {language === 'as' ? 'সঠিক উত্তৰ' : language === 'hi' ? 'सही उत्तर' : language === 'mni' ? 'চুম্বা উত্তর' : 'Questions Correct'}
                 </span>
-                <p className="text-2xl font-bold font-serif text-teal-950 mt-0.5">
+                <p className="text-2xl font-bold font-serif text-teal-950 dark:text-teal-200 mt-0.5">
                   {score} / {questions.length}
                 </p>
               </div>
-              <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-2xl text-center">
-                <span className="text-xs text-amber-850 font-medium">
+              <div className="p-4 bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl text-center">
+                <span className="text-xs text-amber-850 dark:text-amber-400 font-medium">
                   {language === 'as' ? 'স্মৃতি দক্ষতা' : language === 'hi' ? 'स्मृति सटीकता' : language === 'mni' ? 'নীংশিংবা ঙম্বা' : 'Memory Accuracy'}
                 </span>
-                <p className="text-2xl font-bold font-serif text-amber-950 mt-0.5">
+                <p className="text-2xl font-bold font-serif text-amber-950 dark:text-amber-200 mt-0.5">
                   {Math.round((score / (questions.length || 1)) * 100)}%
                 </p>
               </div>
-              <div className="col-span-2 sm:col-span-1 p-4 bg-stone-100 border border-stone-200 rounded-2xl text-center">
-                <span className="text-xs text-stone-600 font-medium">
+              <div className="col-span-2 sm:col-span-1 p-4 bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl text-center">
+                <span className="text-xs text-stone-600 dark:text-stone-400 font-medium">
                   {language === 'as' ? 'উৎস' : language === 'hi' ? 'स्रोत' : language === 'mni' ? 'হৌফম' : 'Source Pool'}
                 </span>
-                <p className="text-lg font-bold font-serif text-stone-800 mt-1">
+                <p className="text-lg font-bold font-serif text-stone-800 dark:text-stone-200 mt-1">
                   {people.length} {language === 'as' ? 'জন' : language === 'hi' ? 'सदस्य' : 'People'} • {memories.length} {language === 'as' ? 'স্মৃতি' : language === 'hi' ? 'यादें' : 'Memories'}
                 </p>
               </div>
@@ -671,7 +717,7 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
                 id="finish-return-activities-btn"
                 type="button"
                 onClick={onClose}
-                className="w-full sm:w-auto py-3 px-5 bg-stone-200 hover:bg-stone-300 text-stone-800 font-semibold text-sm rounded-xl transition-all cursor-pointer"
+                className="w-full sm:w-auto py-3 px-5 bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 font-semibold text-sm rounded-xl transition-all cursor-pointer"
               >
                 {language === 'as'
                   ? 'কাৰ্যসূচীলৈ উভতি যাওক'
@@ -687,12 +733,12 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
           /* Active Question Card */
           <div
             id="quiz-question-card"
-            className="bg-white rounded-3xl p-5 sm:p-7 border border-stone-200 shadow-xs space-y-5 animate-in fade-in"
+            className="bg-white dark:bg-stone-900 rounded-3xl p-5 sm:p-7 border border-stone-200 dark:border-stone-800 shadow-xs space-y-5 animate-in fade-in"
           >
             {/* Header badges & Audio button */}
-            <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-3">
+            <div className="flex items-center justify-between gap-2 border-b border-stone-100 dark:border-stone-800 pb-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider bg-teal-50 text-teal-850 px-2.5 py-0.5 rounded-full border border-teal-200 flex items-center gap-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider bg-teal-50 dark:bg-teal-950/40 text-teal-850 dark:text-teal-300 px-2.5 py-0.5 rounded-full border border-teal-200 dark:border-teal-800 flex items-center gap-1.5">
                   {currentQuestion.type === 'person' ? (
                     <Users className="w-3.5 h-3.5 text-teal-700" />
                   ) : (
@@ -700,7 +746,7 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
                   )}
                   <span>{currentQuestion.category || currentQuestion.type}</span>
                 </span>
-                <span className="text-xs text-stone-500 font-medium">
+                <span className="text-xs text-stone-500 dark:text-stone-400 font-medium">
                   {language === 'as' ? 'বিষয়:' : language === 'hi' ? 'विषय:' : language === 'mni' ? 'মরমদা:' : 'About:'} <strong>{currentQuestion.sourceTitle}</strong>
                 </span>
               </div>
@@ -709,7 +755,7 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
                 id="speak-question-btn"
                 type="button"
                 onClick={handleSpeakQuestion}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-semibold transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-200 dark:border-amber-800 text-xs font-semibold transition-all cursor-pointer"
                 title={language === 'as' ? 'প্ৰশ্নটো শুনক' : language === 'hi' ? 'प्रश्न सुनें' : language === 'mni' ? 'ৱাহং তাজৌ' : 'Read question aloud'}
               >
                 <Volume2 className="w-3.5 h-3.5 text-amber-700" />
@@ -721,7 +767,7 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
 
             {/* Optional Attached Image of Person or Memory */}
             {currentQuestion.imageUrl && (
-              <div className="w-full h-44 sm:h-56 rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 relative shadow-2xs">
+              <div className="w-full h-44 sm:h-56 rounded-2xl overflow-hidden bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 relative shadow-2xs">
                 <img
                   src={currentQuestion.imageUrl}
                   alt={currentQuestion.sourceTitle}
@@ -736,7 +782,7 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
 
             {/* Question Text */}
             <div className="space-y-1">
-              <h3 className="font-serif font-bold text-lg sm:text-2xl text-stone-900 leading-snug">
+              <h3 className="font-serif font-bold text-lg sm:text-2xl text-stone-900 dark:text-stone-100 leading-snug">
                 {currentQuestion.question}
               </h3>
             </div>
@@ -752,7 +798,7 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
                       setShowHint(true);
                       setHintsUsed((prev) => prev + 1);
                     }}
-                    className="inline-flex items-center gap-1.5 text-xs text-teal-800 hover:text-teal-950 font-semibold cursor-pointer underline underline-offset-2"
+                    className="inline-flex items-center gap-1.5 text-xs text-teal-800 dark:text-teal-400 hover:text-teal-950 dark:hover:text-teal-300 font-semibold cursor-pointer underline underline-offset-2"
                   >
                     <HelpCircle className="w-3.5 h-3.5" />
                     <span>
@@ -768,9 +814,9 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
                 ) : (
                   <div
                     id="hint-box"
-                    className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-950 flex items-start gap-2"
+                    className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-950 dark:text-amber-200 flex items-start gap-2"
                   >
-                    <Sparkles className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                    <Sparkles className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
                     <span>{currentQuestion.hint}</span>
                   </div>
                 )}
@@ -784,17 +830,17 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
                 const isCorrect = idx === currentQuestion.correctIndex;
 
                 let btnStyles =
-                  'bg-white hover:bg-stone-50 border-2 border-stone-200 text-stone-850';
+                  'bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800 border-2 border-stone-200 dark:border-stone-800 text-stone-850 dark:text-stone-100';
 
                 if (isAnswered) {
                   if (isCorrect) {
                     btnStyles =
-                      'bg-emerald-50 border-2 border-emerald-500 text-emerald-950 ring-2 ring-emerald-200';
+                      'bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-500 dark:border-emerald-600 text-emerald-950 dark:text-emerald-200 ring-2 ring-emerald-200 dark:ring-emerald-800';
                   } else if (isSelected && !isCorrect) {
                     btnStyles =
-                      'bg-rose-50 border-2 border-rose-400 text-rose-950 ring-2 ring-rose-200';
+                      'bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-400 dark:border-rose-600 text-rose-950 dark:text-rose-200 ring-2 ring-rose-200 dark:ring-rose-800';
                   } else {
-                    btnStyles = 'bg-stone-100/70 border border-stone-200 text-stone-400 opacity-60';
+                    btnStyles = 'bg-stone-100/70 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 text-stone-400 dark:text-stone-500 opacity-60';
                   }
                 }
 
@@ -816,7 +862,7 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
                             ? 'bg-emerald-600 text-white'
                             : isAnswered && isSelected && !isCorrect
                             ? 'bg-rose-500 text-white'
-                            : 'bg-stone-200 text-stone-700'
+                            : 'bg-stone-200 dark:bg-stone-800 text-stone-700 dark:text-stone-300'
                         }`}
                       >
                         {optionLetters[idx]}
@@ -843,8 +889,8 @@ export const PersonalMemoryQuizGame: React.FC<PersonalMemoryQuizGameProps> = ({
                 id="quiz-feedback-box"
                 className={`p-4 rounded-2xl border text-xs sm:text-sm leading-relaxed flex items-start gap-3 animate-in fade-in ${
                   selectedOption === currentQuestion.correctIndex
-                    ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950'
-                    : 'bg-amber-50/90 border-amber-300 text-amber-950'
+                    ? 'bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-950 dark:text-emerald-200'
+                    : 'bg-amber-50/90 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200'
                 }`}
               >
                 {selectedOption === currentQuestion.correctIndex ? (

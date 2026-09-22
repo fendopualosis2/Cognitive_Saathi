@@ -1153,6 +1153,15 @@ Return JSON array of objects with:
   }
 });
 
+// In-memory cache for generated quiz questions to prevent repetitive Gemini quota consumption
+interface QuizMemoryCacheEntry {
+  questions: any[];
+  totalAvailable: number;
+  generatedBy: string;
+  expiresAt: number;
+}
+const quizMemoryCache = new Map<string, QuizMemoryCacheEntry>();
+
 // AI-Generated Personal Memories & Loved Ones Quiz for Cognitive Recall
 app.post('/api/ai/memory-quiz', async (req, res) => {
   try {
@@ -1178,6 +1187,18 @@ app.post('/api/ai/memory-quiz', async (req, res) => {
         questions: [],
         totalAvailable: 0,
         message: 'No memories or loved ones have been added yet.',
+      });
+      return;
+    }
+
+    // Check cache before calling Gemini (prevents 429 quota exhaustion on re-mounts)
+    const cacheKey = `${patientId || 'patient'}-${language}-${activeMemories.length}-${activePeople.length}`;
+    const cachedEntry = quizMemoryCache.get(cacheKey);
+    if (cachedEntry && Date.now() < cachedEntry.expiresAt && cachedEntry.questions?.length > 0) {
+      res.json({
+        questions: cachedEntry.questions,
+        totalAvailable: cachedEntry.totalAvailable,
+        generatedBy: `${cachedEntry.generatedBy} (cached)`,
       });
       return;
     }
@@ -1382,7 +1403,8 @@ app.post('/api/ai/memory-quiz', async (req, res) => {
     const ai = getAiClient();
 
     if (ai) {
-      const peopleSummary = activePeople.map((p: any) => ({
+      // Build lightweight text summaries stripped of all heavy media data URLs (prevents token quota exhaustion)
+      const peopleSummary = activePeople.slice(0, 8).map((p: any) => ({
         name: p.name,
         relationship: p.relationship,
         likes: p.likes,
@@ -1392,19 +1414,16 @@ app.post('/api/ai/memory-quiz', async (req, res) => {
         marriageDate: p.marriageDate,
         importantDates: p.importantDates,
         personality: p.personality,
-        description: p.description,
-        notes: p.notes,
-        imageUrl: p.imageUrl,
+        description: typeof p.description === 'string' ? p.description.slice(0, 150) : undefined,
       }));
 
-      const memoriesSummary = activeMemories.map((m: any) => ({
+      const memoriesSummary = activeMemories.slice(0, 8).map((m: any) => ({
         title: m.title,
         category: m.category,
         region: m.region,
         dateLabel: m.dateLabel,
-        story: m.story,
-        interactiveQuestion: m.interactiveQuestion,
-        imageUrl: m.imageUrl,
+        story: typeof m.story === 'string' ? m.story.slice(0, 250) : '',
+        interactiveQuestion: m.interactiveQuestion?.question,
       }));
 
       const prompt = `You are a gentle, loving cognitive health companion for an elderly person named ${patientName}.
@@ -1422,14 +1441,14 @@ Cherished Memories & Stories (${memoriesSummary.length}):
 ${JSON.stringify(memoriesSummary, null, 2)}
 
 Requirements:
-1. Generate 5 to 7 high-quality, dignified questions testing gentle recall of family members, loved ones, and life scenarios.
+1. Generate 4 to 6 high-quality, dignified questions testing gentle recall of family members, loved ones, and life scenarios.
 2. Balance questions between People (relationships, favorite activities, birthdays, locations) and Memories (what happened in the story, where it occurred, time of year).
 3. Every question MUST have EXACTLY 4 answer options:
    - Exactly ONE option MUST be the factual correct answer directly supported by the data above.
    - Three options must be plausible, respectful distractors (never bizarre, mocking, or jarring).
 4. Include a warm, reassuring 1-sentence "explanation" that celebrates the answer and reinforces memory retention.
 5. Include a kind "hint" that gives a gentle clue without immediately revealing the full answer.
-6. Attach the corresponding "imageUrl" if available from the person or memory.
+6. Provide "sourceTitle" with the exact name of the person or title of the memory from the data above.
 
 Return a JSON array conforming strictly to this format:
 [
@@ -1442,10 +1461,12 @@ Return a JSON array conforming strictly to this format:
     "correctIndex": number (0, 1, 2, or 3),
     "explanation": "string",
     "hint": "string",
-    "imageUrl": "string (or undefined)",
     "category": "string"
   }
 ]`;
+
+      let parsed: any = null;
+      let usedModel = 'gemini-3.8-flash';
 
       try {
         const response = await ai.models.generateContent({
@@ -1457,36 +1478,100 @@ Return a JSON array conforming strictly to this format:
           },
         });
 
-        const parsed = JSON.parse(response.text || '[]');
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Validate structure of parsed questions
-          const validQuestions = parsed.filter(
-            (q: any) =>
-              q &&
-              typeof q.question === 'string' &&
-              Array.isArray(q.options) &&
-              q.options.length === 4 &&
-              typeof q.correctIndex === 'number' &&
-              q.correctIndex >= 0 &&
-              q.correctIndex <= 3
-          );
+        parsed = JSON.parse(response.text || '[]');
+      } catch (primaryErr: any) {
+        // If quota exceeded (429 / RESOURCE_EXHAUSTED) on 3.8-flash, seamlessly attempt 3.1-flash-lite
+        const isQuotaOrRateLimit =
+          primaryErr?.status === 429 ||
+          String(primaryErr?.message || '').includes('429') ||
+          String(primaryErr?.message || '').includes('quota') ||
+          String(primaryErr?.message || '').includes('RESOURCE_EXHAUSTED');
 
-          if (validQuestions.length > 0) {
-            res.json({
-              questions: validQuestions,
-              totalAvailable: activeMemories.length + activePeople.length,
-              generatedBy: 'gemini-3.8-flash',
+        if (isQuotaOrRateLimit) {
+          try {
+            usedModel = 'gemini-3.1-flash-lite';
+            const liteResponse = await ai.models.generateContent({
+              model: 'gemini-3.1-flash-lite',
+              contents: prompt,
+              config: {
+                responseMimeType: 'application/json',
+                temperature: 0.3,
+              },
             });
-            return;
+            parsed = JSON.parse(liteResponse.text || '[]');
+          } catch (secondaryErr: any) {
+            console.log('[Memory Quiz] Gemini API quota limit active, utilizing localized recall questions.');
           }
+        } else {
+          console.log('[Memory Quiz] Note: AI generation unavailable, serving localized questions.');
         }
-      } catch (geminiErr) {
-        console.warn('Gemini memory-quiz generation notice, using fallback questions:', geminiErr);
+      }
+
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Validate structure of parsed questions
+        const validQuestions = parsed.filter(
+          (q: any) =>
+            q &&
+            typeof q.question === 'string' &&
+            Array.isArray(q.options) &&
+            q.options.length === 4 &&
+            typeof q.correctIndex === 'number' &&
+            q.correctIndex >= 0 &&
+            q.correctIndex <= 3
+        );
+
+        if (validQuestions.length > 0) {
+          // Re-hydrate image URLs on server side from activePeople & activeMemories
+          const hydratedQuestions = validQuestions.map((q: any) => {
+            let matchedImage: string | undefined = undefined;
+            if (q.sourceTitle) {
+              const personMatch = activePeople.find(
+                (p: any) => p.name?.toLowerCase().trim() === q.sourceTitle.toLowerCase().trim()
+              );
+              if (personMatch?.imageUrl) matchedImage = personMatch.imageUrl;
+
+              if (!matchedImage) {
+                const memoryMatch = activeMemories.find(
+                  (m: any) => m.title?.toLowerCase().trim() === q.sourceTitle.toLowerCase().trim()
+                );
+                if (memoryMatch?.imageUrl) matchedImage = memoryMatch.imageUrl;
+              }
+            }
+            return {
+              ...q,
+              imageUrl: matchedImage,
+            };
+          });
+
+          // Cache AI-generated questions for 15 minutes
+          quizMemoryCache.set(cacheKey, {
+            questions: hydratedQuestions,
+            totalAvailable: activeMemories.length + activePeople.length,
+            generatedBy: usedModel,
+            expiresAt: Date.now() + 15 * 60 * 1000,
+          });
+
+          res.json({
+            questions: hydratedQuestions,
+            totalAvailable: activeMemories.length + activePeople.length,
+            generatedBy: usedModel,
+          });
+          return;
+        }
       }
     }
 
     // Return fallback questions
     const fallbackList = generateFallbackQuestions();
+
+    // Cache fallback questions for 3 minutes to avoid hammering API while quota resets
+    quizMemoryCache.set(cacheKey, {
+      questions: fallbackList,
+      totalAvailable: activeMemories.length + activePeople.length,
+      generatedBy: 'fallback',
+      expiresAt: Date.now() + 3 * 60 * 1000,
+    });
+
     res.json({
       questions: fallbackList,
       totalAvailable: activeMemories.length + activePeople.length,

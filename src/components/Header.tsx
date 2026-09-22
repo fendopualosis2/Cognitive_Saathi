@@ -7,6 +7,7 @@ import {
   WifiOff,
   RefreshCw,
   Sun,
+  Moon,
   Languages,
   LogOut,
   User,
@@ -24,6 +25,8 @@ interface HeaderProps {
   onLanguageChange: (lang: LanguageCode) => void;
   highContrast: boolean;
   onToggleHighContrast: () => void;
+  darkMode?: boolean;
+  onToggleDarkMode?: () => void;
   onOpenVoiceCompanion: () => void;
   onEmergencyCall: () => void;
   onTriggerSync: () => void;
@@ -40,6 +43,8 @@ export const Header: React.FC<HeaderProps> = ({
   onLanguageChange,
   highContrast,
   onToggleHighContrast,
+  darkMode,
+  onToggleDarkMode,
   onOpenVoiceCompanion,
   onEmergencyCall,
   onTriggerSync,
@@ -49,30 +54,30 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header
       id="main-app-header"
-      className="sticky top-0 z-40 bg-[#FAF8F5]/95 backdrop-blur border-b border-stone-200 px-4 py-2.5 transition-colors"
+      className="sticky top-0 z-40 bg-[#FAF8F5]/95 dark:bg-[#161B22]/95 backdrop-blur border-b border-stone-200 dark:border-stone-800 px-4 py-2.5 transition-colors"
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
         {/* Brand & Identity */}
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-teal-800 text-amber-200 flex items-center justify-center shadow-sm shrink-0 border border-teal-700">
+          <div className="w-10 h-10 rounded-xl bg-teal-800 dark:bg-teal-900 text-amber-200 flex items-center justify-center shadow-sm shrink-0 border border-teal-700 dark:border-teal-600">
             <span className="font-serif font-bold text-lg tracking-tight">সা</span>
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <h1 className="text-base sm:text-lg font-serif font-bold text-stone-900 truncate leading-tight">
+              <h1 className="text-base sm:text-lg font-serif font-bold text-stone-900 dark:text-stone-100 truncate leading-tight">
                 CognitiveSaathi
               </h1>
               <span
                 className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full ${
                   role === 'PATIENT'
-                    ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                    : 'bg-teal-100 text-teal-900 border border-teal-300'
+                    ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700'
+                    : 'bg-teal-100 dark:bg-teal-950/60 text-teal-900 dark:text-teal-200 border border-teal-300 dark:border-teal-700'
                 }`}
               >
                 {role === 'PATIENT' ? 'Companion' : 'Care Circle'}
               </span>
             </div>
-            <p className="text-xs text-stone-600 truncate hidden sm:block">
+            <p className="text-xs text-stone-600 dark:text-stone-400 truncate hidden sm:block">
               {role === 'PATIENT'
                 ? currentPatient?.preferredName
                   ? `For ${currentPatient.preferredName}`
@@ -91,18 +96,18 @@ export const Header: React.FC<HeaderProps> = ({
             title={connectivity === 'CONNECTED' ? 'Connected (Tap to refresh)' : 'Offline mode (Tap to reconnect)'}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
               connectivity === 'CONNECTED' || connectivity === 'SYNCED'
-                ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50'
                 : connectivity === 'SYNCING'
-                ? 'bg-amber-50 text-amber-800 border-amber-300 animate-pulse'
-                : 'bg-stone-100 text-stone-700 border-stone-300 hover:bg-stone-200'
+                ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-800 animate-pulse'
+                : 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-300 dark:border-stone-700 hover:bg-stone-200 dark:hover:bg-stone-700'
             }`}
           >
             {connectivity === 'CONNECTED' || connectivity === 'SYNCED' ? (
-              <Wifi className="w-3.5 h-3.5 text-emerald-600" />
+              <Wifi className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             ) : connectivity === 'SYNCING' ? (
-              <RefreshCw className="w-3.5 h-3.5 text-amber-600 animate-spin" />
+              <RefreshCw className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 animate-spin" />
             ) : (
-              <WifiOff className="w-3.5 h-3.5 text-stone-500" />
+              <WifiOff className="w-3.5 h-3.5 text-stone-500 dark:text-stone-400" />
             )}
             <span className="hidden md:inline">
               {connectivity === 'CONNECTED' || connectivity === 'SYNCED'
@@ -118,20 +123,33 @@ export const Header: React.FC<HeaderProps> = ({
             <label htmlFor="language-select" className="sr-only">
               Select Language
             </label>
-            <Languages className="w-3.5 h-3.5 text-stone-500 absolute left-2 pointer-events-none" />
+            <Languages className="w-3.5 h-3.5 text-stone-500 dark:text-stone-400 absolute left-2 pointer-events-none" />
             <select
               id="language-select"
               value={currentLanguage}
               onChange={(e) => onLanguageChange(e.target.value as LanguageCode)}
-              className="pl-7 pr-2 py-1 text-xs font-medium bg-white border border-stone-300 rounded-lg text-stone-800 focus:outline-none focus:ring-2 focus:ring-teal-700 cursor-pointer"
+              className="pl-7 pr-2 py-1 text-xs font-medium bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-lg text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-teal-700 cursor-pointer"
             >
               {(Object.keys(LANGUAGE_METADATA) as LanguageCode[]).map((code) => (
-                <option key={code} value={code}>
+                <option key={code} value={code} className="bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100">
                   {LANGUAGE_METADATA[code].nativeName}
                 </option>
               ))}
             </select>
           </div>
+
+          {/* Dark Mode Toggle */}
+          {onToggleDarkMode && (
+            <button
+              id="toggle-dark-mode"
+              onClick={onToggleDarkMode}
+              title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="p-1.5 rounded-lg border transition-colors bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-700"
+            >
+              {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-stone-700 dark:text-stone-300" />}
+              <span className="sr-only">Toggle theme</span>
+            </button>
+          )}
 
           {/* High Contrast Toggle */}
           <button
@@ -140,8 +158,8 @@ export const Header: React.FC<HeaderProps> = ({
             title={highContrast ? 'Disable high contrast' : 'Enable high contrast mode'}
             className={`p-1.5 rounded-lg border transition-colors ${
               highContrast
-                ? 'bg-stone-900 text-white border-stone-900 ring-2 ring-amber-400'
-                : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-100'
+                ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 border-stone-900 dark:border-stone-100 ring-2 ring-amber-400'
+                : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-700'
             }`}
           >
             <Sun className="w-4 h-4" />
@@ -178,9 +196,9 @@ export const Header: React.FC<HeaderProps> = ({
             id="header-switch-role-btn"
             onClick={() => onSwitchRole(role === 'PATIENT' ? 'CAREGIVER' : 'PATIENT')}
             title={`Switch to ${role === 'PATIENT' ? 'Caregiver View' : 'Patient View'}`}
-            className="hidden sm:flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-stone-300 bg-white hover:bg-stone-100 text-stone-700 font-medium"
+            className="hidden sm:flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 font-medium"
           >
-            <User className="w-3.5 h-3.5 text-stone-500" />
+            <User className="w-3.5 h-3.5 text-stone-500 dark:text-stone-400" />
             <span>{role === 'PATIENT' ? 'Caregiver' : 'Patient'}</span>
           </button>
 
@@ -188,7 +206,7 @@ export const Header: React.FC<HeaderProps> = ({
             id="header-logout-btn"
             onClick={onLogout}
             title="Log out"
-            className="p-1.5 rounded-lg border border-stone-300 bg-white hover:bg-rose-50 hover:text-rose-700 text-stone-600 transition-colors"
+            className="p-1.5 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-700 dark:hover:text-rose-300 text-stone-600 dark:text-stone-300 transition-colors"
           >
             <LogOut className="w-4 h-4" />
             <span className="sr-only">Log out</span>

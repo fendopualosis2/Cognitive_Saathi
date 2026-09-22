@@ -1585,7 +1585,7 @@ Return a JSON array conforming strictly to this format:
 
 // Catch-all for undefined API routes to prevent HTML responses
 app.all('/api/*', (req, res) => {
-  res.status(404).json({ error: 'API endpoint not found on Vercel: ' + req.originalUrl });
+  res.status(404).json({ error: 'API endpoint not found: ' + req.originalUrl });
 });
 
 // Start Server with Vite Middleware in Development and WebSocketServer
@@ -1737,7 +1737,7 @@ Always call the tool first if asked about their day, schedule, or medications.`;
   });
 
   app.all('/api/*', (req, res) => {
-    res.status(404).json({ error: 'API endpoint not found on Vercel: ' + req.originalUrl });
+    res.status(404).json({ error: 'API endpoint not found: ' + req.originalUrl });
   });
 
   if (process.env.NODE_ENV !== 'production') {

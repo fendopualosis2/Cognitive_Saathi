@@ -143,8 +143,9 @@ app.get('/api/auth/check-username', (req, res) => {
 });
 
 // Register new account (Patient or Caregiver)
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
   try {
+    await ServerDB.syncFromCloud();
     const { role, profile, password } = req.body;
 
     if (!role || !profile || !password) {
@@ -224,6 +225,7 @@ app.post('/api/auth/register', (req, res) => {
       };
 
       ServerDB.addPatient(newPatient);
+      await ServerDB.syncToCloud();
 
       res.status(201).json({
         success: true,
@@ -255,6 +257,7 @@ app.post('/api/auth/register', (req, res) => {
       };
 
       ServerDB.addCaretaker(newCaretaker);
+      await ServerDB.syncToCloud();
 
       res.status(201).json({
         success: true,
@@ -272,8 +275,9 @@ app.post('/api/auth/register', (req, res) => {
 });
 
 // Login API (Number/Username and Password) - Uses cryptographically secure random session tokens and never exposes passwords
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   try {
+    await ServerDB.syncFromCloud();
     const { identifier, password, role = 'PATIENT' } = req.body;
 
     if (!identifier || !password) {

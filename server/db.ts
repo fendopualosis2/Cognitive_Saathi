@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { getDb } from '../src/services/firebase.js';
 import { PatientProfile, CaretakerProfile, RoutineTask, ReminderItem, MemoryMoment, PersonInLife, GameSessionResult, CaregiverConnectionRequest, CalendarEvent } from '../src/types.js';
 
 export interface DatabaseSchema {
@@ -71,6 +73,25 @@ const INITIAL_CARETAKERS: CaretakerProfile[] = [];
 
 export class ServerDB {
   private static cache: DatabaseSchema | null = null;
+
+  public static async syncFromCloud(): Promise<void> {
+    const db = getDb();
+    if (!db) return;
+    try {
+      const snapshot = await getDoc(doc(db, 'serverless', 'database'));
+      if (snapshot.exists()) {
+        this.cache = snapshot.data() as DatabaseSchema;
+      }
+    } catch (e) { console.warn('Cloud sync read failed:', e); }
+  }
+
+  public static async syncToCloud(): Promise<void> {
+    const db = getDb();
+    if (!db || !this.cache) return;
+    try {
+      await setDoc(doc(db, 'serverless', 'database'), this.cache);
+    } catch (e) { console.error('Cloud sync write failed:', e); }
+  }
 
   public static ensureDbExists(): DatabaseSchema {
     if (this.cache) return this.cache;

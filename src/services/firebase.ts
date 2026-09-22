@@ -35,7 +35,7 @@ export function getDb(): Firestore | null {
   const app = getFirebaseApp();
   if (app) {
     try {
-      dbInstance = getFirestore(app);
+      dbInstance = getFirestore(app, "ai-studio-cognitivesaathi-62186706-13a4-45a8-b1db-6239b1022dc0");
     } catch (e) {
       console.warn('Firestore instance notice:', e);
     }

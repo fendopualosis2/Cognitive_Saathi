@@ -33,28 +33,51 @@
   outline-offset: 3px;
 }
 
-/* BUG #9 FIX: Genuine High Contrast Mode */
-.high-contrast-mode {
+/* Genuine High Contrast Mode (Light & Dark compatible) */
+.high-contrast-mode:not(.dark) {
   background-color: #ffffff !important;
   color: #000000 !important;
 }
 
-.high-contrast-mode * {
+.high-contrast-mode:not(.dark) * {
   border-color: #000000 !important;
 }
 
-.high-contrast-mode button,
-.high-contrast-mode input,
-.high-contrast-mode select,
-.high-contrast-mode textarea {
+.high-contrast-mode:not(.dark) button,
+.high-contrast-mode:not(.dark) input,
+.high-contrast-mode:not(.dark) select,
+.high-contrast-mode:not(.dark) textarea {
   border-width: 2px !important;
   border-color: #000000 !important;
   color: #000000 !important;
 }
 
-.high-contrast-mode button:hover {
+.high-contrast-mode:not(.dark) button:hover {
   background-color: #000000 !important;
   color: #ffffff !important;
+}
+
+.dark.high-contrast-mode {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.dark.high-contrast-mode * {
+  border-color: #ffffff !important;
+}
+
+.dark.high-contrast-mode button,
+.dark.high-contrast-mode input,
+.dark.high-contrast-mode select,
+.dark.high-contrast-mode textarea {
+  border-width: 2px !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+.dark.high-contrast-mode button:hover {
+  background-color: #ffffff !important;
+  color: #000000 !important;
 }
 
 /* ADDITIONAL UI BUG #1 FIX: Proper reduced-motion disabling */

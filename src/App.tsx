@@ -50,7 +50,7 @@ import { getTranslation, LANGUAGE_METADATA } from './services/languages';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { VoiceCompanionModal } from './components/VoiceCompanionModal';
-import { AuthModal } from './components/AuthModal';
+import { AuthPage } from './components/AuthPage';
 import { CaregiverCircleModal } from './components/CaregiverCircleModal';
 import { Games } from './components/Games';
 import { MemoryTilesGame } from './components/MemoryTilesGame';
@@ -93,10 +93,12 @@ export default function App() {
   const [highContrast, setHighContrast] = useState<boolean>(false);
   const [darkMode, setDarkMode] = useState<boolean>(() => OfflineStore.getDarkMode());
   const [textScale, setTextScale] = useState<TextScale>('normal');
+  const [currentPath, setCurrentPath] = useState<string>(() =>
+    typeof window !== 'undefined' ? window.location.pathname : '/'
+  );
 
   // Modals
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isCircleModalOpen, setIsCircleModalOpen] = useState(false);
 
   // Clinical Report State (Caregiver)
@@ -179,6 +181,24 @@ export default function App() {
     OfflineStore.setHighContrast(highContrast);
   }, [highContrast]);
 
+  // Synchronize documentElement font size for Tailwind rem scaling
+  useEffect(() => {
+    if (textScale === 'extralarge') {
+      document.documentElement.style.fontSize = '125%';
+    } else if (textScale === 'large') {
+      document.documentElement.style.fontSize = '112.5%';
+    } else {
+      document.documentElement.style.fontSize = '100%';
+    }
+  }, [textScale]);
+
+  const handleToggleTextScale = () => {
+    const nextScale: TextScale =
+      textScale === 'normal' ? 'large' : textScale === 'large' ? 'extralarge' : 'normal';
+    setTextScale(nextScale);
+    OfflineStore.setTextScale(nextScale);
+  };
+
   // Load initial settings and data
   useEffect(() => {
     const savedContrast = OfflineStore.getHighContrast();
@@ -203,19 +223,19 @@ export default function App() {
           setCurrentPatient(localPatient);
           loadPatientData(localPatient.id);
         } else {
-          setIsAuthModalOpen(true);
+          setCurrentPath('/login');
         }
       } else if (session.role === 'CAREGIVER') {
         const localCaretaker = OfflineStore.getCaretaker();
         if (localCaretaker) {
           setCurrentCaretaker(localCaretaker);
         } else {
-          setIsAuthModalOpen(true);
+          setCurrentPath('/login');
         }
       }
     } else {
-      // First thing that shows is login and register page instead of directly opening a random account
-      setIsAuthModalOpen(true);
+      // First thing that shows is dedicated full-page login/register route
+      setCurrentPath('/login');
     }
 
     // Fetch live patients list from backend if available
@@ -345,6 +365,8 @@ export default function App() {
   // BUG #7 FIX: Android / Browser Back Button handling without exiting SPA
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
+      setCurrentPath(window.location.pathname);
+
       // If a game is active, exit game to activities tab
       if (activeGameId) {
         setActiveGameId(null);
@@ -353,11 +375,6 @@ export default function App() {
       // If voice modal is open, close modal
       if (isVoiceModalOpen) {
         setIsVoiceModalOpen(false);
-        return;
-      }
-      // If auth modal is open, close modal
-      if (isAuthModalOpen) {
-        setIsAuthModalOpen(false);
         return;
       }
       // If circle modal is open, close modal
@@ -396,7 +413,7 @@ export default function App() {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [activeGameId, isVoiceModalOpen, isAuthModalOpen, isCircleModalOpen, isPhotoViewerOpen, isAddPhotosModalOpen, isVoiceNoteModalOpen, patientTab, caregiverTab, role]);
+  }, [activeGameId, isVoiceModalOpen, isCircleModalOpen, isPhotoViewerOpen, isAddPhotosModalOpen, isVoiceNoteModalOpen, patientTab, caregiverTab, role]);
 
   // Push state on significant navigation
   const navigatePatientTab = (tab: any) => {
@@ -850,8 +867,93 @@ export default function App() {
     setMemories([]);
     setSessions([]);
     setPendingRequests([]);
-    setIsAuthModalOpen(true);
+    setCurrentPath('/login');
+    window.history.pushState(null, '', '/login');
   };
+
+  const handleLoginSuccess = (
+    newRole: UserRole,
+    pat: PatientProfile | null,
+    ct: CaretakerProfile | null,
+    token: string
+  ) => {
+    setRole(newRole);
+    if (pat) {
+      setCurrentPatient(pat);
+      OfflineStore.savePatient(pat);
+      loadPatientData(pat.id);
+    }
+    if (ct) {
+      setCurrentCaretaker(ct);
+      OfflineStore.saveCaretaker(ct);
+    }
+    OfflineStore.saveAuthSession({
+      role: newRole,
+      patientId: pat?.id,
+      caretakerId: ct?.id,
+      expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      token,
+    });
+    fetchPatientsList();
+    setCurrentPath('/');
+    window.history.replaceState(null, '', '/');
+  };
+
+  const handleSwitchRole = (targetRole: UserRole) => {
+    setRole(targetRole);
+    if (targetRole === 'CAREGIVER' && !currentCaretaker) {
+      const localCaretaker = OfflineStore.getCaretaker();
+      if (localCaretaker) {
+        setCurrentCaretaker(localCaretaker);
+      } else {
+        setCurrentPath('/login');
+        window.history.pushState(null, '', '/login');
+      }
+    } else if (targetRole === 'PATIENT' && !currentPatient) {
+      const localPatient = OfflineStore.getPatient();
+      if (localPatient) {
+        setCurrentPatient(localPatient);
+        loadPatientData(localPatient.id);
+      } else {
+        setCurrentPath('/login');
+        window.history.pushState(null, '', '/login');
+      }
+    }
+  };
+
+  const isAuthenticated = Boolean(
+    (role === 'PATIENT' && currentPatient) || (role === 'CAREGIVER' && currentCaretaker)
+  );
+
+  // Dedicated Full-Page Authentication View (No popup modal)
+  if (!isAuthenticated || currentPath === '/login') {
+    return (
+      <div
+        id="cognitivesaathi-app-root"
+        className={`min-h-screen bg-[#FBF9F5] dark:bg-[#0D1117] text-[#292524] dark:text-[#E6EDF3] flex flex-col font-sans transition-colors duration-200 ${
+          textScale === 'large'
+            ? 'text-lg'
+            : textScale === 'extralarge'
+            ? 'text-xl'
+            : 'text-base'
+        }`}
+      >
+        <AuthPage
+          currentLanguage={language}
+          onLanguageChange={(newLang) => {
+            setLanguage(newLang);
+            OfflineStore.setLanguage(newLang);
+          }}
+          darkMode={darkMode}
+          onToggleDarkMode={() => setDarkMode(!darkMode)}
+          highContrast={highContrast}
+          onToggleHighContrast={() => setHighContrast(!highContrast)}
+          initialRole={role}
+          onLoginSuccess={handleLoginSuccess}
+        />
+      </div>
+    );
+  }
 
   const t = (key: string) => getTranslation(key, language);
 
@@ -881,10 +983,12 @@ export default function App() {
         onToggleHighContrast={() => setHighContrast(!highContrast)}
         darkMode={darkMode}
         onToggleDarkMode={() => setDarkMode(!darkMode)}
+        textScale={textScale}
+        onToggleTextScale={handleToggleTextScale}
         onOpenVoiceCompanion={() => setIsVoiceModalOpen(true)}
         onEmergencyCall={handleEmergencyCall}
         onTriggerSync={handleTriggerSync}
-        onSwitchRole={(targetRole) => setRole(targetRole)}
+        onSwitchRole={handleSwitchRole}
         onLogout={handleLogout}
       />
 
@@ -1979,7 +2083,39 @@ export default function App() {
 
                   {/* Text Scale */}
                   <div className="p-3 bg-stone-50 dark:bg-stone-800/80 rounded-2xl border border-stone-200 dark:border-stone-700 space-y-2">
-                    <h4 className="text-sm font-semibold text-stone-900 dark:text-stone-100">{t('large_text')}</h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-semibold text-stone-900 dark:text-stone-100">{t('large_text')}</h4>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          id="text-scale-decrease-btn"
+                          onClick={() => {
+                            const next: TextScale = textScale === 'extralarge' ? 'large' : 'normal';
+                            setTextScale(next);
+                            OfflineStore.setTextScale(next);
+                          }}
+                          disabled={textScale === 'normal'}
+                          title="Decrease font size"
+                          className="px-2.5 py-1 text-xs font-bold rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 disabled:opacity-40 hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors cursor-pointer"
+                        >
+                          A-
+                        </button>
+                        <button
+                          type="button"
+                          id="text-scale-increase-btn"
+                          onClick={() => {
+                            const next: TextScale = textScale === 'normal' ? 'large' : 'extralarge';
+                            setTextScale(next);
+                            OfflineStore.setTextScale(next);
+                          }}
+                          disabled={textScale === 'extralarge'}
+                          title="Increase font size"
+                          className="px-2.5 py-1 text-xs font-bold rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 disabled:opacity-40 hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors cursor-pointer"
+                        >
+                          A+
+                        </button>
+                      </div>
+                    </div>
                     <div className="flex gap-2">
                       {(['normal', 'large', 'extralarge'] as TextScale[]).map((scale) => (
                         <button
@@ -1991,8 +2127,8 @@ export default function App() {
                           }}
                           className={`flex-1 py-1.5 rounded-xl text-xs font-semibold capitalize border ${
                             textScale === scale
-                              ? 'bg-teal-850 text-white border-teal-850'
-                              : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 border-stone-300 dark:border-stone-700'
+                              ? 'bg-teal-850 text-white border-teal-850 shadow-xs'
+                              : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-700'
                           }`}
                         >
                           {scale === 'extralarge' ? 'Extra Large' : scale}
@@ -2830,40 +2966,6 @@ export default function App() {
         memories={memories}
         people={people}
         sessions={sessions}
-      />
-
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        canClose={Boolean(
-          (role === 'PATIENT' && currentPatient) || (role === 'CAREGIVER' && currentCaretaker)
-        )}
-        onClose={() => {
-          if ((role === 'PATIENT' && currentPatient) || (role === 'CAREGIVER' && currentCaretaker)) {
-            setIsAuthModalOpen(false);
-          }
-        }}
-        onLoginSuccess={(newRole, pat, ct, token) => {
-          setRole(newRole);
-          if (pat) {
-            setCurrentPatient(pat);
-            OfflineStore.savePatient(pat);
-            loadPatientData(pat.id);
-          }
-          if (ct) {
-            setCurrentCaretaker(ct);
-            OfflineStore.saveCaretaker(ct);
-          }
-          OfflineStore.saveAuthSession({
-            role: newRole,
-            patientId: pat?.id,
-            caretakerId: ct?.id,
-            expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
-            token,
-          });
-          setIsAuthModalOpen(false);
-          fetchPatientsList();
-        }}
       />
 
       {/* Caregiver Circle Modal */}

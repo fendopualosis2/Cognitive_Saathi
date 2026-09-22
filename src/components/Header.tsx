@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Heart,
   Volume2,
@@ -12,8 +12,9 @@ import {
   LogOut,
   User,
   ShieldCheck,
+  Type,
 } from 'lucide-react';
-import { UserRole, ConnectivityStatus, LanguageCode, PatientProfile, CaretakerProfile } from '../types';
+import { UserRole, ConnectivityStatus, LanguageCode, PatientProfile, CaretakerProfile, TextScale } from '../types';
 import { LANGUAGE_METADATA } from '../services/languages';
 
 interface HeaderProps {
@@ -27,6 +28,8 @@ interface HeaderProps {
   onToggleHighContrast: () => void;
   darkMode?: boolean;
   onToggleDarkMode?: () => void;
+  textScale?: TextScale;
+  onToggleTextScale?: () => void;
   onOpenVoiceCompanion: () => void;
   onEmergencyCall: () => void;
   onTriggerSync: () => void;
@@ -45,12 +48,15 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleHighContrast,
   darkMode,
   onToggleDarkMode,
+  textScale = 'normal',
+  onToggleTextScale,
   onOpenVoiceCompanion,
   onEmergencyCall,
   onTriggerSync,
   onSwitchRole,
   onLogout,
 }) => {
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   return (
     <header
       id="main-app-header"
@@ -144,7 +150,7 @@ export const Header: React.FC<HeaderProps> = ({
               id="toggle-dark-mode"
               onClick={onToggleDarkMode}
               title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-              className="p-1.5 rounded-lg border transition-colors bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-700"
+              className="p-1.5 rounded-lg border transition-colors bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-700 shadow-xs"
             >
               {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-stone-700 dark:text-stone-300" />}
               <span className="sr-only">Toggle theme</span>
@@ -156,7 +162,7 @@ export const Header: React.FC<HeaderProps> = ({
             id="toggle-high-contrast"
             onClick={onToggleHighContrast}
             title={highContrast ? 'Disable high contrast' : 'Enable high contrast mode'}
-            className={`p-1.5 rounded-lg border transition-colors ${
+            className={`p-1.5 rounded-lg border transition-colors shadow-xs ${
               highContrast
                 ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 border-stone-900 dark:border-stone-100 ring-2 ring-amber-400'
                 : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-700'
@@ -165,6 +171,23 @@ export const Header: React.FC<HeaderProps> = ({
             <Sun className="w-4 h-4" />
             <span className="sr-only">Toggle high contrast</span>
           </button>
+
+          {/* Text Size Scale Toggle */}
+          {onToggleTextScale && (
+            <button
+              id="header-toggle-text-scale"
+              onClick={onToggleTextScale}
+              title={`Text size: ${textScale}. Click to enlarge text.`}
+              className={`p-1.5 rounded-lg border transition-colors font-bold text-xs shadow-xs ${
+                textScale !== 'normal'
+                  ? 'bg-teal-100 dark:bg-teal-900/60 text-teal-900 dark:text-teal-200 border-teal-400 dark:border-teal-700'
+                  : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-700'
+              }`}
+            >
+              <span className="font-serif">A+</span>
+              <span className="sr-only">Enlarge text size</span>
+            </button>
+          )}
 
           {/* Voice Assistant Button (for Patient) */}
           {role === 'PATIENT' && (
@@ -204,15 +227,62 @@ export const Header: React.FC<HeaderProps> = ({
 
           <button
             id="header-logout-btn"
-            onClick={onLogout}
+            onClick={() => setShowLogoutConfirm(true)}
             title="Log out"
-            className="p-1.5 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-700 dark:hover:text-rose-300 text-stone-600 dark:text-stone-300 transition-colors"
+            className="p-1.5 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-700 dark:hover:text-rose-300 text-stone-600 dark:text-stone-300 transition-colors shadow-xs"
           >
             <LogOut className="w-4 h-4" />
             <span className="sr-only">Log out</span>
           </button>
         </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div
+          id="logout-confirmation-modal"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="logout-confirm-title"
+        >
+          <div className="bg-white dark:bg-stone-900 w-full max-w-sm rounded-3xl shadow-2xl border border-stone-200 dark:border-stone-800 p-6 text-center animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-14 h-14 rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 mx-auto flex items-center justify-center mb-4 border border-rose-200 dark:border-rose-900">
+              <LogOut className="w-7 h-7" />
+            </div>
+            <h3
+              id="logout-confirm-title"
+              className="text-lg font-serif font-bold text-stone-900 dark:text-stone-100 mb-2"
+            >
+              Are you sure you want to log out?
+            </h3>
+            <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400 mb-6 leading-relaxed">
+              Your daily routines, memories, and progress are securely saved. You can sign back in anytime.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                id="cancel-logout-btn"
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 font-semibold text-sm transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                id="confirm-logout-btn"
+                onClick={() => {
+                  setShowLogoutConfirm(false);
+                  onLogout();
+                }}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-sm shadow-md transition-colors cursor-pointer"
+              >
+                Yes, Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

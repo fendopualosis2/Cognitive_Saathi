@@ -5,8 +5,8 @@ import crypto from 'crypto';
 import { WebSocketServer, WebSocket } from 'ws';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
-import { ServerDB, sanitizeProfile, verifyPassword, hashPassword } from './server/db';
-import { PatientProfile, CaretakerProfile } from './src/types';
+import { ServerDB, sanitizeProfile, verifyPassword, hashPassword } from './server/db.js';
+import { PatientProfile, CaretakerProfile } from './src/types.js';
 import {
   PATIENT_TOOL_DECLARATIONS,
   executePatientTool,
@@ -14,7 +14,7 @@ import {
   transcribeAudioWithGemini,
   generateSaathiCompanion,
   generateGeminiVoice,
-} from './server/aiAssistant';
+} from './server/aiAssistant.js';
 
 const app = express();
 const PORT = 3000;

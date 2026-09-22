@@ -1,6 +1,6 @@
 import { GoogleGenAI, Modality } from '@google/genai';
-import { ServerDB } from './db';
-import { ReminderItem, RoutineTask } from '../src/types';
+import { ServerDB } from './db.js';
+import { ReminderItem, RoutineTask } from '../src/types.js';
 
 export const PATIENT_TOOL_DECLARATIONS = [
   {

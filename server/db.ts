@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { PatientProfile, CaretakerProfile, RoutineTask, ReminderItem, MemoryMoment, PersonInLife, GameSessionResult, CaregiverConnectionRequest, CalendarEvent } from '../src/types';
+import { PatientProfile, CaretakerProfile, RoutineTask, ReminderItem, MemoryMoment, PersonInLife, GameSessionResult, CaregiverConnectionRequest, CalendarEvent } from '../src/types.js';
 
 export interface DatabaseSchema {
   patients: PatientProfile[];

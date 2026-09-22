@@ -2,6 +2,28 @@ import { GoogleGenAI, Modality } from '@google/genai';
 import { ServerDB } from './db';
 import { ReminderItem, RoutineTask } from '../src/types';
 
+let geminiQuotaCooldownUntil = 0;
+
+export function isGeminiQuotaExhausted(): boolean {
+  return Date.now() < geminiQuotaCooldownUntil;
+}
+
+export function recordGeminiQuotaError(err: any): void {
+  const errStr = typeof err === 'object' ? (err?.message || JSON.stringify(err)) : String(err || '');
+  if (
+    err?.status === 429 ||
+    err?.code === 429 ||
+    err?.status === 503 ||
+    err?.code === 503 ||
+    errStr.includes('429') ||
+    errStr.includes('RESOURCE_EXHAUSTED') ||
+    errStr.includes('quota') ||
+    errStr.includes('high demand')
+  ) {
+    geminiQuotaCooldownUntil = Date.now() + 60000;
+  }
+}
+
 export const PATIENT_TOOL_DECLARATIONS = [
   {
     name: 'get_patient_profile',
@@ -278,7 +300,7 @@ export async function summarizeVoiceNoteWithGemini(
   audioPrompt: string;
   suggestedImageUrl: string;
 }> {
-  if (ai && transcript && transcript.trim().length > 5) {
+  if (ai && !isGeminiQuotaExhausted() && transcript && transcript.trim().length > 5) {
     const prompt = `You are a warm, culturally sensitive memory curator for an eldercare app in Northeast India (Assam, Manipur, Meghalaya, Nagaland, Tripura).
 A senior patient or their family caregiver recorded this spoken voice note about a cherished memory:
 "${transcript}"
@@ -308,7 +330,6 @@ Respond ONLY with valid JSON in this structure:
 }`;
 
     try {
-
       const res = await ai.models.generateContent({
         model: 'gemini-3.1-flash-lite',
         contents: prompt,
@@ -333,34 +354,36 @@ Respond ONLY with valid JSON in this structure:
           };
         }
       }
-    } catch (err) {
-      console.warn('Gemini voice note summarization notice, falling back to gemini-3.6-flash:', err);
-      try {
-        const fallbackRes = await ai.models.generateContent({
-          model: 'gemini-3.6-flash',
-          contents: prompt,
-          config: {
-            responseMimeType: 'application/json',
-            temperature: 0.4,
-          },
-        });
-        if (fallbackRes.text) {
-          const parsed = JSON.parse(fallbackRes.text);
-          if (parsed.title && parsed.story) {
-            return {
-              title: parsed.title,
-              story: parsed.story,
-              region: parsed.region || 'Assam',
-              category: parsed.category || 'Family',
-              audioPrompt: parsed.audioPrompt || 'Do you remember this beautiful moment together?',
-              suggestedImageUrl:
-                parsed.suggestedImageUrl ||
-                'https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&auto=format&fit=crop&q=80',
-            };
+    } catch (err: any) {
+      recordGeminiQuotaError(err);
+      if (!isGeminiQuotaExhausted()) {
+        try {
+          const fallbackRes = await ai.models.generateContent({
+            model: 'gemini-3.6-flash',
+            contents: prompt,
+            config: {
+              responseMimeType: 'application/json',
+              temperature: 0.4,
+            },
+          });
+          if (fallbackRes.text) {
+            const parsed = JSON.parse(fallbackRes.text);
+            if (parsed.title && parsed.story) {
+              return {
+                title: parsed.title,
+                story: parsed.story,
+                region: parsed.region || 'Assam',
+                category: parsed.category || 'Family',
+                audioPrompt: parsed.audioPrompt || 'Do you remember this beautiful moment together?',
+                suggestedImageUrl:
+                  parsed.suggestedImageUrl ||
+                  'https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&auto=format&fit=crop&q=80',
+              };
+            }
           }
+        } catch (fbErr: any) {
+          recordGeminiQuotaError(fbErr);
         }
-      } catch (fbErr) {
-        console.warn('Gemini voice note summarization fallback notice:', fbErr);
       }
     }
   }
@@ -390,7 +413,7 @@ export async function transcribeAudioWithGemini(
   mimeType: string = 'audio/webm',
   preferredLanguage?: string
 ): Promise<string> {
-  if (!ai || !audioBase64) {
+  if (!ai || !audioBase64 || isGeminiQuotaExhausted()) {
     return '';
   }
 
@@ -434,16 +457,22 @@ Rules:
 
       return res.text ? res.text.trim() : '';
     } catch (liteErr: any) {
-      console.warn('Gemini audio transcription lite notice, trying gemini-3.6-flash:', liteErr?.message || liteErr);
-      const fallbackRes = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
-        contents: audioContent,
-      });
-
-      return fallbackRes.text ? fallbackRes.text.trim() : '';
+      recordGeminiQuotaError(liteErr);
+      if (!isGeminiQuotaExhausted()) {
+        try {
+          const fallbackRes = await ai.models.generateContent({
+            model: 'gemini-3.6-flash',
+            contents: audioContent,
+          });
+          return fallbackRes.text ? fallbackRes.text.trim() : '';
+        } catch (fbErr: any) {
+          recordGeminiQuotaError(fbErr);
+        }
+      }
+      return '';
     }
-  } catch (err) {
-    console.warn('Gemini audio transcription error:', err);
+  } catch (err: any) {
+    recordGeminiQuotaError(err);
     return '';
   }
 }
@@ -488,7 +517,7 @@ export async function generateGeminiVoice(
   text: string,
   voiceName: string = 'Kore'
 ): Promise<string | null> {
-  if (!ai || !text || text.trim().length === 0) return null;
+  if (!ai || !text || text.trim().length === 0 || isGeminiQuotaExhausted()) return null;
   try {
     // Strip markdown formatting symbols for natural, fluent speech
     const cleanSpeech = text
@@ -524,8 +553,8 @@ export async function generateGeminiVoice(
     const pcmBuf = Buffer.from(pcmBase64, 'base64');
     const wavBuf = pcmToWav(pcmBuf, 24000, 1, 16);
     return `data:audio/wav;base64,${wavBuf.toString('base64')}`;
-  } catch (err) {
-    console.warn('Gemini Voice generation notice:', err);
+  } catch (err: any) {
+    recordGeminiQuotaError(err);
     return null;
   }
 }
@@ -711,7 +740,8 @@ COGNITIVE ACTIVITIES:
 
 === CORE INSTRUCTIONS FOR SAATHI ===
 1. ANSWER ANY QUESTION: You are a genuine, fully functional AI assistant, NOT a canned rule engine. You can converse on ANY topic: daily schedule, next activity, memories tab updates, family, cooking, tea gardens, Assam Bihu folklore, comforting words, science, nature, reassurance, or general conversation.
-2. GROUNDED IN USER'S REAL DATA:
+2. GOOGLE SEARCH & LIVE INFORMATION: You have access to Google Search. When the user asks for real-time information (e.g., today's weather, local news, current dates), you MUST use the Search tool to find accurate answers. Keep your answers extremely simple, reassuring, and short (1 to 3 sentences maximum). Filter out distressing global events. For weather, relate it directly to their personal comfort. Always maintain your gentle, culturally attuned caretaker persona.
+3. GROUNDED IN USER'S REAL DATA:
    - When asked "what is my schedule like", detail their actual schedule above, mentioning what is already completed and what is pending.
    - When asked "what is my next activity" or "what do I do next", state their exact next activity from above (${nextActivity?.title || 'a relaxing pause'}) clearly and reassuringly!
    - When asked "has the memories tab been updated" or about their memories/photos, confirm that the memories tab has ${totalMemories} memories, mention the latest memory title ("${latestMemory?.title || 'keepsake'}"), describe its photos and story warmly.
@@ -753,7 +783,7 @@ COGNITIVE ACTIVITIES:
   let usedModel = 'gemini-3.1-flash-lite';
   const executedTools: any[] = [];
 
-  if (ai) {
+  if (ai && !isGeminiQuotaExhausted()) {
     // Primary: Gemini 3.1 Flash-Lite for ultra-fast, reliable reasoning and low latency voice
     try {
       const liteRes = await ai.models.generateContent({
@@ -762,27 +792,32 @@ COGNITIVE ACTIVITIES:
         config: {
           systemInstruction,
           temperature: 0.7,
+          tools: [{ googleSearch: {} }],
         },
       });
 
       reply = liteRes.text || '';
       thought = `Evaluated elder profile for ${elderName} (${age}, ${region}). Verified real-time schedule: ${routinesList.length} routines total (${completedRoutines.length} done, ${pendingRoutines.length} remaining). Next upcoming activity: ${nextActivity?.title || 'rest'}. Checked memories album: ${totalMemories} keepsakes saved, latest "${latestMemory?.title || 'Family Keepsake'}". Formulated gentle, grounded response in ${preferredLanguage}.`;
     } catch (errLite: any) {
-      console.warn('Notice: gemini-3.1-flash-lite attempt, trying gemini-3.6-flash fallback:', errLite?.message || errLite);
-      try {
-        const genRes = await ai.models.generateContent({
-          model: 'gemini-3.6-flash',
-          contents,
-          config: {
-            systemInstruction,
-            temperature: 0.7,
-          },
-        });
-        reply = genRes.text || '';
-        usedModel = 'gemini-3.6-flash';
-        thought = `Reasoned through elder inquiry against live schedule (${pendingRoutines.length} pending items), verified ${totalMemories} memories in album, and formulated gentle, reassuring guidance for ${elderName}.`;
-      } catch (err36: any) {
-        console.error('All server-side Gemini attempts failed:', err36);
+      recordGeminiQuotaError(errLite);
+
+      if (!isGeminiQuotaExhausted()) {
+        try {
+          const genRes = await ai.models.generateContent({
+            model: 'gemini-3.6-flash',
+            contents,
+            config: {
+              systemInstruction,
+              temperature: 0.7,
+              tools: [{ googleSearch: {} }],
+            },
+          });
+          reply = genRes.text || '';
+          usedModel = 'gemini-3.6-flash';
+          thought = `Reasoned through elder inquiry against live schedule (${pendingRoutines.length} pending items), verified ${totalMemories} memories in album, and formulated gentle, reassuring guidance for ${elderName}.`;
+        } catch (err36: any) {
+          recordGeminiQuotaError(err36);
+        }
       }
     }
   }

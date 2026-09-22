@@ -24,11 +24,6 @@
     transition: background-color 0.2s ease, color 0.2s ease;
   }
 
-  html.dark body {
-    color: #E6EDF3;
-    background-color: #0D1117;
-  }
-
   h1, h2, h3, .font-heading {
     font-family: var(--font-heading);
   }

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { PatientProfile, CaretakerProfile, RoutineTask, ReminderItem, MemoryMoment, PersonInLife, GameSessionResult, CaregiverConnectionRequest } from '../src/types';
+import { PatientProfile, CaretakerProfile, RoutineTask, ReminderItem, MemoryMoment, PersonInLife, GameSessionResult, CaregiverConnectionRequest, CalendarEvent } from '../src/types';
 
 export interface DatabaseSchema {
   patients: PatientProfile[];
@@ -11,10 +11,11 @@ export interface DatabaseSchema {
   memories: Record<string, MemoryMoment[]>;
   people: Record<string, PersonInLife[]>;
   sessions: Record<string, GameSessionResult[]>;
+  calendarEvents?: Record<string, CalendarEvent[]>;
   connectionRequests?: CaregiverConnectionRequest[];
 }
 
-const DB_DIR = path.join(process.cwd(), 'data');
+const DB_DIR = process.env.VERCEL ? '/tmp/data' : path.join(process.cwd(), 'data');
 const DB_PATH = path.join(DB_DIR, 'database.json');
 const DB_TEMP_PATH = path.join(DB_DIR, 'database.json.tmp');
 

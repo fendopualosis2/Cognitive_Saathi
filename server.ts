@@ -1665,4 +1665,6 @@ Always call the tool first if asked about their day, schedule, or medications.`;
   });
 }
 
-startServer();
+if (!process.env.VERCEL) { startServer(); }
+
+export default app;

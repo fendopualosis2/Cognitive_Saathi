@@ -105,6 +105,7 @@ export interface MemoryMoment {
   images?: string[];
   imageAlt: string;
   dateLabel: string;
+  memoryDate?: string; // YYYY-MM-DD format: the date when the memory occurred
   story: string;
   audioPrompt: string;
   interactiveQuestion: {
@@ -116,6 +117,29 @@ export interface MemoryMoment {
   voiceNoteAudioUrl?: string;
   originalVoiceTranscript?: string;
   summarizedByAi?: boolean;
+}
+
+export type CalendarEventType =
+  | 'DOCTOR'
+  | 'MEDICINE'
+  | 'FAMILY'
+  | 'FESTIVAL'
+  | 'BIRTHDAY'
+  | 'MILESTONE'
+  | 'GENERAL';
+
+export interface CalendarEvent {
+  id: string;
+  patientId: string;
+  title: string;
+  date: string; // YYYY-MM-DD
+  time?: string; // e.g. "10:30 AM"
+  type: CalendarEventType;
+  notes?: string;
+  createdBy: 'CAREGIVER' | 'PATIENT';
+  createdByName?: string;
+  isImportant?: boolean;
+  createdAt: string;
 }
 
 export interface PersonImportantDate {
@@ -197,6 +221,8 @@ export interface PatientProfile {
   avatarUrl?: string;
   dailyStreak: number;
   todayCompletedCount: number;
+  lastLoginTimestamp?: number;
+  lastLoginDate?: string;
   phone?: string;
   caregiverRemovalNotice?: CaregiverRemovalNotice;
 }

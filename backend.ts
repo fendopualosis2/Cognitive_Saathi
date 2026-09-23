@@ -559,8 +559,9 @@ app.post('/api/caretakers', (req, res) => {
 
 // Caregiver Connection Requests & Patient Confirmation APIs
 // Caregiver initiates connection request by entering patient ID
-app.post('/api/caregiver-requests', (req, res) => {
+app.post('/api/caregiver-requests', async (req, res) => {
   try {
+    await ServerDB.syncFromCloud();
     const { caretakerId, patientIdentifier } = req.body;
     if (!caretakerId || !patientIdentifier) {
       res.status(400).json({ error: 'Caregiver ID and Patient ID are required.' });
@@ -571,6 +572,7 @@ app.post('/api/caregiver-requests', (req, res) => {
       res.status(400).json({ error: result.error });
       return;
     }
+    await ServerDB.syncToCloud();
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to create connection request', details: err?.message });
@@ -578,8 +580,9 @@ app.post('/api/caregiver-requests', (req, res) => {
 });
 
 // Caregiver links patient - routed through connection request with confirmation
-app.post('/api/caretakers/:id/link-patient', (req, res) => {
+app.post('/api/caretakers/:id/link-patient', async (req, res) => {
   try {
+    await ServerDB.syncFromCloud();
     const { identifier } = req.body;
     if (!identifier) {
       res.status(400).json({ error: 'Patient ID, key, or mobile number is required.' });
@@ -590,6 +593,7 @@ app.post('/api/caretakers/:id/link-patient', (req, res) => {
       res.status(400).json({ error: result.error });
       return;
     }
+    await ServerDB.syncToCloud();
     res.json({
       success: true,
       pendingConfirmation: true,
@@ -603,8 +607,9 @@ app.post('/api/caretakers/:id/link-patient', (req, res) => {
 });
 
 // Patient fetches pending connection requests
-app.get('/api/caregiver-requests/patient/:patientId', (req, res) => {
+app.get('/api/caregiver-requests/patient/:patientId', async (req, res) => {
   try {
+    await ServerDB.syncFromCloud();
     const requests = ServerDB.getPendingRequestsForPatient(req.params.patientId);
     res.json(requests);
   } catch (err: any) {
@@ -613,8 +618,9 @@ app.get('/api/caregiver-requests/patient/:patientId', (req, res) => {
 });
 
 // Caregiver fetches status of sent requests
-app.get('/api/caregiver-requests/caretaker/:caretakerId', (req, res) => {
+app.get('/api/caregiver-requests/caretaker/:caretakerId', async (req, res) => {
   try {
+    await ServerDB.syncFromCloud();
     const requests = ServerDB.getRequestsForCaretaker(req.params.caretakerId);
     res.json(requests);
   } catch (err: any) {
@@ -623,8 +629,9 @@ app.get('/api/caregiver-requests/caretaker/:caretakerId', (req, res) => {
 });
 
 // Patient accepts or declines connection request
-app.post('/api/caregiver-requests/:id/respond', (req, res) => {
+app.post('/api/caregiver-requests/:id/respond', async (req, res) => {
   try {
+    await ServerDB.syncFromCloud();
     const { action, patientId } = req.body;
     if (!action || !['ACCEPT', 'DECLINE'].includes(action)) {
       res.status(400).json({ error: 'Action must be ACCEPT or DECLINE' });
@@ -635,6 +642,7 @@ app.post('/api/caregiver-requests/:id/respond', (req, res) => {
       res.status(400).json({ error: result.error });
       return;
     }
+    await ServerDB.syncToCloud();
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to respond to request', details: err?.message });
@@ -642,8 +650,9 @@ app.post('/api/caregiver-requests/:id/respond', (req, res) => {
 });
 
 // Link caregiver to patient
-app.post('/api/patients/:id/link-caregiver', (req, res) => {
+app.post('/api/patients/:id/link-caregiver', async (req, res) => {
   try {
+    await ServerDB.syncFromCloud();
     const { caregiverKey, patient } = req.body;
     if (!caregiverKey) {
       res.status(400).json({ error: 'Caregiver key is required.' });
@@ -657,6 +666,7 @@ app.post('/api/patients/:id/link-caregiver', (req, res) => {
       res.status(404).json({ error: result.error });
       return;
     }
+    await ServerDB.syncToCloud();
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to link caregiver', details: err?.message });
@@ -664,8 +674,9 @@ app.post('/api/patients/:id/link-caregiver', (req, res) => {
 });
 
 // Unlink caregiver from patient
-app.post('/api/patients/:id/unlink-caregiver', (req, res) => {
+app.post('/api/patients/:id/unlink-caregiver', async (req, res) => {
   try {
+    await ServerDB.syncFromCloud();
     const { initiator = 'CAREGIVER', initiatorName, initiatorId } = {
       ...req.query,
       ...req.body,
@@ -676,6 +687,7 @@ app.post('/api/patients/:id/unlink-caregiver', (req, res) => {
       initiatorName,
       initiatorId
     );
+    await ServerDB.syncToCloud();
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to unlink caregiver', details: err?.message });
@@ -683,8 +695,9 @@ app.post('/api/patients/:id/unlink-caregiver', (req, res) => {
 });
 
 // Caregiver deletes / removes patient from their care circle
-app.post('/api/caretakers/:id/remove-patient/:patientId', (req, res) => {
+app.post('/api/caretakers/:id/remove-patient/:patientId', async (req, res) => {
   try {
+    await ServerDB.syncFromCloud();
     const caretakerId = req.params.id;
     const patientId = req.params.patientId;
     const { initiatorName } = req.body || {};
@@ -696,6 +709,7 @@ app.post('/api/caretakers/:id/remove-patient/:patientId', (req, res) => {
       initiatorName || ct?.fullName,
       caretakerId
     );
+    await ServerDB.syncToCloud();
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to remove patient', details: err?.message });
@@ -703,9 +717,11 @@ app.post('/api/caretakers/:id/remove-patient/:patientId', (req, res) => {
 });
 
 // Dismiss caregiver removal notice on patient profile
-app.post('/api/patients/:id/dismiss-notice', (req, res) => {
+app.post('/api/patients/:id/dismiss-notice', async (req, res) => {
   try {
+    await ServerDB.syncFromCloud();
     const success = ServerDB.dismissCaregiverRemovalNotice(req.params.id);
+    await ServerDB.syncToCloud();
     res.json({ success });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to dismiss notice', details: err?.message });
@@ -713,10 +729,12 @@ app.post('/api/patients/:id/dismiss-notice', (req, res) => {
 });
 
 // Dismiss patient removal notice on caregiver profile
-app.post('/api/caretakers/:id/dismiss-notice', (req, res) => {
+app.post('/api/caretakers/:id/dismiss-notice', async (req, res) => {
   try {
+    await ServerDB.syncFromCloud();
     const { noticeId } = req.body || {};
     const success = ServerDB.dismissPatientRemovalNotice(req.params.id, noticeId);
+    await ServerDB.syncToCloud();
     res.json({ success });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to dismiss notice', details: err?.message });

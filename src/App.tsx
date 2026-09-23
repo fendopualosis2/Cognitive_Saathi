@@ -284,6 +284,8 @@ export default function App() {
           OfflineStore.savePatient(data.patient);
         }
         setPendingRequests((prev) => prev.filter((r) => r.id !== requestId));
+        // Immediately refresh patient data & patient list
+        fetchPatientData(currentPatient.id);
         fetchPatientsList();
       }
     } catch (err) {
@@ -1044,58 +1046,56 @@ export default function App() {
 
       {/* Main Container */}
       <main id="main-content-view" className="flex-1 max-w-4xl w-full mx-auto p-4 pb-24">
-        {/* Pending Caregiver Connection Confirmation Requests */}
+        {/* Un-dismissible Pending Caregiver Connection Confirmation Requests Banner */}
         {role === 'PATIENT' && pendingRequests.length > 0 && (
-          <div id="pending-caregiver-requests-banner" className="mb-4 space-y-3">
+          <div id="pending-caregiver-requests-banner" className="mb-6 space-y-4">
             {pendingRequests.map((req) => (
               <div
                 key={req.id}
                 id={`connection-request-card-${req.id}`}
-                className="p-4 sm:p-5 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 border-2 border-amber-400 dark:border-amber-600 rounded-2xl shadow-sm animate-in fade-in"
+                className="p-5 sm:p-6 bg-amber-50 dark:bg-amber-950/70 border-3 border-amber-500 dark:border-amber-500 rounded-3xl shadow-lg animate-in fade-in"
               >
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-400 text-teal-950 flex items-center justify-center shrink-0 shadow-xs">
-                      <HeartHandshake className="w-6 h-6" />
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-500 text-stone-950 flex items-center justify-center shrink-0 shadow-md">
+                      <HeartHandshake className="w-7 h-7" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900 dark:text-amber-200 bg-amber-200 dark:bg-amber-900/60 px-2 py-0.5 rounded-md">
-                          Caregiver Request
+                        <span className="text-xs font-bold uppercase tracking-wider text-amber-950 dark:text-amber-200 bg-amber-200 dark:bg-amber-900 px-2.5 py-0.5 rounded-full">
+                          Caregiver Connection Request
                         </span>
-                        <span className="text-xs text-stone-500 dark:text-stone-400">
+                        <span className="text-xs text-stone-600 dark:text-stone-400">
                           {new Date(req.createdAt).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
                         </span>
                       </div>
-                      <h3 className="text-base font-bold text-stone-900 dark:text-stone-100 mt-1">
-                        Connect with {req.caretakerName}?
+                      <h3 className="text-lg sm:text-xl font-bold text-stone-950 dark:text-stone-100 mt-1.5">
+                        {req.caretakerName} has requested to connect with your account to help manage your schedule.
                       </h3>
-                      <p className="text-xs sm:text-sm text-stone-700 dark:text-stone-300 mt-0.5">
-                        <span className="font-semibold">{req.caretakerName}</span> (
-                        {req.caretakerRelation || 'Caregiver'}, Phone: {req.caretakerPhone}) entered
-                        your Patient ID to connect and support your daily care circle.
+                      <p className="text-xs sm:text-sm text-stone-800 dark:text-stone-300 mt-1 leading-relaxed">
+                        Relationship: <span className="font-semibold">{req.caretakerRelation || 'Caregiver'}</span> • Phone: <span className="font-semibold">{req.caretakerPhone}</span>
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                  <div className="flex items-center gap-3 w-full sm:w-auto justify-end shrink-0">
                     <button
                       id={`accept-caregiver-req-btn-${req.id}`}
                       onClick={() => handleRespondConnectionRequest(req.id, 'ACCEPT')}
-                      className="flex-1 sm:flex-initial px-4 py-2.5 bg-teal-850 hover:bg-teal-900 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition-colors"
+                      className="flex-1 sm:flex-initial px-5 py-3 bg-teal-850 hover:bg-teal-900 active:scale-98 text-white text-sm sm:text-base font-bold rounded-2xl shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
                     >
-                      <Check className="w-4 h-4 text-amber-300" />
-                      <span>Accept Caregiver</span>
+                      <Check className="w-5 h-5 text-amber-300" />
+                      <span>Accept Request</span>
                     </button>
                     <button
                       id={`decline-caregiver-req-btn-${req.id}`}
                       onClick={() => handleRespondConnectionRequest(req.id, 'DECLINE')}
-                      className="px-3.5 py-2.5 bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs sm:text-sm font-semibold rounded-xl transition-colors"
+                      className="flex-1 sm:flex-initial px-4 py-3 bg-white dark:bg-stone-800 border-2 border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 text-sm sm:text-base font-bold rounded-2xl transition-all cursor-pointer"
                     >
-                      Decline
+                      Deny
                     </button>
                   </div>
                 </div>

@@ -1862,103 +1862,71 @@ async function startServer() {
 
             const ai = getAiClient();
             if (ai) {
-              const systemInstruction = `You are "Saathi", a deeply compassionate, calming, and culturally attuned AI Caretaker and Companion for an elderly person named ${patientName} in Northeast India.
-Speak with immense gentleness, respect, and warmth in short, reassuring sentences (1 to 2 sentences max).
-You have access to patient tools to check routines, reminders, memories, and recent cognitive exercises.
-Always call the tool first if asked about their day, schedule, or medications.`;
+              const routines = ServerDB.getRoutines(authorizedPatientId);
+              const formattedRoutines = routines.map((r: any) => `${r.title} at ${r.time} (${r.completed ? 'Done' : 'Pending'})`).join(', ') || 'No routines.';
+              const patientData: any = ServerDB.findPatient(authorizedPatientId) || {};
+              const caregiverName = patientData.caregiverName || 'Family Caregiver';
 
-              const contents = [
-                {
-                  role: 'user',
-                  parts: [{ text: userText }],
-                },
-              ];
+              const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+              const currentTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-              const safetySettings = [
-                { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-              ];
+              const systemInstruction = `You are Saathi, a warm, conversational, and highly intelligent female AI companion for ${patientName}.
+CRITICAL CONTEXT:
+- Today is ${currentDate}, and the current time is ${currentTime}.
+- Caregiver: ${caregiverName}
+- Schedule: ${formattedRoutines}
 
-              let response = await ai.models.generateContent({
-                model: 'gemini-3.8-flash',
-                contents,
-                config: {
-                  systemInstruction,
-                  temperature: 0.6,
-                  safetySettings: safetySettings as any,
-                  tools: [
-                    { functionDeclarations: PATIENT_TOOL_DECLARATIONS as any },
-                    { googleSearch: {} }
-                  ],
-                },
-              });
+YOUR PRIME DIRECTIVE:
+1. ANSWER CONFIDENTLY & CREATIVELY: Answer EVERY everyday question warmly. If asked for advice (e.g., food, activities), give a specific, delicious, or engaging recommendation. If asked about the weather, use the current date to give a warm, seasonal description.
+2. NEVER APOLOGIZE FOR LACK OF ACCESS: NEVER say "I don't have real-time access", "I am an AI", or "I cannot answer that". Always provide a helpful, human-like response.
+3. THE "TOO HARD" RULE: ONLY if the question is highly complex (e.g., advanced coding, calculus, engineering), gently state that this is outside your current capacity as a companion, and smoothly change the subject.
+4. TOOLS: ONLY use tools if explicitly asked about medical data.
+5. TONE: Speak in 1-4 soothing sentences.`;
+
+              const config = {
+                systemInstruction,
+                temperature: 0.7,
+                tools: [{ functionDeclarations: PATIENT_TOOL_DECLARATIONS }]
+              };
+
+              const contents = [{ role: 'user', parts: [{ text: userText }] }];
+              let response: any;
+              let wsModel = 'gemini-3.8-flash';
+              try {
+                response = await ai.models.generateContent({ model: 'gemini-3.8-flash', contents, config: config as any });
+              } catch (wsTierErr: any) {
+                wsModel = 'gemini-3.1-flash-lite';
+                response = await ai.models.generateContent({ model: 'gemini-3.1-flash-lite', contents, config: config as any });
+              }
 
               if (response.functionCalls && response.functionCalls.length > 0) {
-                const toolCalls = response.functionCalls;
-                ws.send(JSON.stringify({ type: 'tool_call', calls: toolCalls.map((c) => c.name) }));
+                const call = response.functionCalls[0];
+                ws.send(JSON.stringify({ type: 'tool_call', calls: [call.name] }));
 
-                const functionResponseParts: any[] = [];
-                for (const call of toolCalls) {
-                  const toolResult = await executePatientTool(authorizedPatientId, call.name, call.args || {});
-                  functionResponseParts.push({
-                    functionResponse: {
-                      name: call.name,
-                      response: toolResult,
-                    },
-                  });
+                let toolResult;
+                try {
+                  toolResult = await executePatientTool(authorizedPatientId, call.name, call.args || {});
+                } catch (e) {
+                  toolResult = { error: "Could not fetch data." };
                 }
 
+                const bypassConfig = { systemInstruction, temperature: 0.7 };
                 const followUpContents = [
-                  ...contents,
-                  {
-                    role: 'model',
-                    parts: toolCalls.map((call) => ({
-                      functionCall: {
-                        name: call.name,
-                        args: call.args,
-                      },
-                    })),
-                  },
-                  {
-                    role: 'user',
-                    parts: functionResponseParts,
-                  },
+                  { role: 'user', parts: [{ text: userText }] },
+                  { role: 'user', parts: [{ text: `[SYSTEM: Tool '${call.name}' returned: ${JSON.stringify(toolResult)}. Speak to the patient based on this.]` }] }
                 ];
 
-                const followUpResponse = await ai.models.generateContent({
-                  model: 'gemini-3.8-flash',
-                  contents: followUpContents,
-                  config: {
-                    systemInstruction,
-                    temperature: 0.6,
-                    safetySettings: safetySettings as any,
-                    tools: [
-                      { functionDeclarations: PATIENT_TOOL_DECLARATIONS as any },
-                      { googleSearch: {} }
-                    ],
-                  },
-                });
-
-                const replyText = followUpResponse.text || 'I am right here with you, dear.';
-                ws.send(
-                  JSON.stringify({
-                    type: 'reply',
-                    text: replyText,
-                    executedTools: toolCalls.map((c) => c.name),
-                  })
-                );
+                let followUpRes: any;
+                try {
+                  followUpRes = await ai.models.generateContent({ model: wsModel, contents: followUpContents, config: bypassConfig as any });
+                } catch (wsFollowUpErr: any) {
+                  followUpRes = await ai.models.generateContent({ model: 'gemini-3.1-flash-lite', contents: followUpContents, config: bypassConfig as any });
+                }
+                ws.send(JSON.stringify({ type: 'reply', text: followUpRes.text || 'I am here with you.', executedTools: [call.name] }));
                 return;
               }
 
-              const replyText = response.text || 'I am here by your side, peaceful and safe.';
-              ws.send(
-                JSON.stringify({
-                  type: 'reply',
-                  text: replyText,
-                })
-              );
+              ws.send(JSON.stringify({ type: 'reply', text: response.text || 'I am peaceful and safe.' }));
               return;
             }
 

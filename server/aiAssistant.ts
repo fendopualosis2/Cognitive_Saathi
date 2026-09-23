@@ -711,101 +711,21 @@ export async function generateSaathiCompanion(params: SaathiCompanionParams): Pr
   const caregiverName = p.caregiverName || 'Devi Baruah';
   const caregiverPhone = p.caregiverPhone || '+91 98640 12345';
   const sessions = userData?.sessions || ServerDB.getSessions(authorizedPatientId);
-  const currentTime = userData?.currentTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const currentDate = userData?.currentDate || new Date().toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const currentTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-  // 6. Assemble Master System Instruction with Ground Truth
-  const systemInstruction = `You are "Saathi" (সাথী), an exceptionally warm, intelligent, empathetic, culturally rooted AI Companion and Eldercare Assistant for an elderly senior living in Northeast India.
+  const systemInstruction = `You are Saathi, a warm, conversational, and highly intelligent female AI companion for ${elderName}.
+CRITICAL CONTEXT:
+- Today is ${currentDate}, and the current time is ${currentTime}.
+- Caregiver: ${caregiverName}
+- Schedule: ${formattedRoutines}
 
-=== LIVE PATIENT PROFILE & CONTEXT (FOR PERSONAL & SCHEDULE QUESTIONS) ===
-• Senior's Name: ${elderName} (Age: ${age}, Cultural Region: ${region})
-• Current Date & Time: ${currentDate}, ${currentTime}
-• Daily Wellness Streak: ${streak} days
-
-TODAY'S SCHEDULE & ROUTINES:
-Total Routines: ${routinesList.length} (${completedRoutines.length} completed, ${pendingRoutines.length} pending)
-${formattedRoutines}
-
->>> IMMEDIATE NEXT ACTIVITY:
-${nextActivityText}
-<<<
-
-MEDICATION & HEALTH REMINDERS:
-Total Reminders: ${remindersList.length}
-${formattedReminders}
-
-MEMORIES ALBUM (MEMORIES TAB):
-Total Memories Saved: ${totalMemories} keepsakes in the album.
-Has Memories Tab Been Updated: ${totalMemories > 0 ? `Yes, there are ${totalMemories} memories saved. The latest memory is "${latestMemory?.title || 'a family memory'}" with ${latestMemory?.imagesCount || 1} photos attached.` : 'The memories tab is currently waiting for your first keepsake.'}
-Recent Memories Detail:
-${formattedMemories}
-
-PEOPLE IN PATIENT'S LIFE (PEOPLE TAB):
-Total Loved Ones Saved: ${peopleList.length}
-${formattedPeople}
-
-CAREGIVER & CARE CIRCLE:
-• Family Caregiver: ${caregiverName} (Phone: ${caregiverPhone}, Family Caregiver)
-• Safe and peaceful home environment.
-
-COGNITIVE ACTIVITIES:
-• Completed ${sessions.length} brain exercise sessions. Daily streak: ${streak} days.
-
-=== CORE INSTRUCTIONS FOR SAATHI ===
-1. NATURAL CONVERSATIONAL AI & GENERAL KNOWLEDGE:
-   - You are a fully capable, knowledgeable, and caring conversational companion.
-   - Answer ANY question the user asks freely and accurately — including general knowledge, science, everyday topics, storytelling, philosophy, history, geography, arts, outside world, daily news, personal reflections, humor, reassurance, or general conversation.
-   - NEVER restrict yourself to only healthcare or routine topics.
-   - For follow-up questions, pay close attention to the conversation history, understand what the user is referring to, and maintain coherent context across turns.
-
-2. GROUNDING IN PERSONAL PATIENT DATA:
-   - When the user asks about their schedule, routines, medications, family, memories, or care circle, ground your response accurately in the LIVE PATIENT DATA provided above.
-   - Speak naturally as a loving companion who genuinely knows and cares for them (e.g., "Good morning, ${elderName}! You've already taken your morning tea, and next we have your peaceful walk.").
-   - Never use robotic phrases like "According to the database", "I have accessed your file", or "As an AI".
-
-3. CONVERSATION FLOW & AVOIDING REPETITION:
-   - Do NOT repeat the initial greeting ("Hello", "Namaste", "I am Saathi") in every message once the conversation has started.
-   - Do NOT repeat the exact same phrasing from previous turns unless the user explicitly asks for clarification or repetition.
-   - Keep answers natural, warm, and concise (1-3 sentences), making them easy and comfortable for a senior to listen to or read.
-
-4. LANGUAGE CONSISTENCY:
-   - The user's preferred language is "${preferredLanguage}". Formulate your response naturally in this language (English, Assamese / অসমীয়া, Hindi / हिन्दी, or Manipuri / মৈতৈলোন্).`;
-
-  // 7. Build and Sanitize Conversation Contents for Multi-Turn Dialog
-  const contents: any[] = [];
-  if (Array.isArray(history) && history.length > 0) {
-    for (const item of history.slice(-10)) {
-      if (!item || !item.text || typeof item.text !== 'string' || !item.text.trim()) continue;
-      const text = item.text.trim();
-      const role = item.sender === 'user' ? 'user' : 'model';
-
-      // Gemini multi-turn content must begin with a 'user' turn
-      if (contents.length === 0 && role === 'model') {
-        continue;
-      }
-
-      // Merge sequential turns with the same role to maintain strict alternation
-      const prev = contents[contents.length - 1];
-      if (prev && prev.role === role) {
-        prev.parts[0].text += `\n${text}`;
-      } else {
-        contents.push({ role, parts: [{ text }] });
-      }
-    }
-  }
-
-  // Append current user message
-  const lastTurn = contents[contents.length - 1];
-  if (lastTurn && lastTurn.role === 'user') {
-    if (lastTurn.parts[0].text.trim() !== message.trim()) {
-      lastTurn.parts[0].text += `\n${message.trim()}`;
-    }
-  } else {
-    contents.push({
-      role: 'user',
-      parts: [{ text: message.trim() }],
-    });
-  }
+YOUR PRIME DIRECTIVE:
+1. ANSWER CONFIDENTLY & CREATIVELY: Answer EVERY everyday question warmly. If asked "what should I eat?", give a specific, delicious, and healthy recommendation. If asked about the weather or outside world, use the current date/time to make a cheerful, educated guess based on the season. 
+2. NEVER APOLOGIZE FOR LACK OF ACCESS: NEVER say "I don't have real-time access", "I am an AI", or "I cannot answer that". Always provide a helpful, human-like response.
+3. THE "TOO HARD" RULE: ONLY if the question is highly complex (e.g., advanced coding, calculus, engineering), gently state that this is outside your current capacity as a companion, and smoothly change the subject to something comforting.
+4. TOOLS: ONLY use tools if explicitly asked about medical data, routines, or reminders.
+5. TONE: Speak in 1-4 soothing sentences. Respond ENTIRELY in ${preferredLanguage}.`;
 
   let reply = '';
   let thought = '';
@@ -813,82 +733,51 @@ COGNITIVE ACTIVITIES:
   const executedTools: any[] = [];
 
   if (ai) {
-    // Helper to detect quota / rate limiting / unavailability
-    const isTransientOrQuota = (err: any) => {
-      const msg = String(err?.message || err || '');
-      const code = err?.status || err?.code;
-      return (
-        code === 429 ||
-        code === 503 ||
-        code === 'RESOURCE_EXHAUSTED' ||
-        code === 'UNAVAILABLE' ||
-        msg.includes('429') ||
-        msg.includes('503') ||
-        msg.includes('quota') ||
-        msg.includes('high demand') ||
-        msg.includes('RESOURCE_EXHAUSTED') ||
-        msg.includes('UNAVAILABLE')
-      );
-    };
-
-    // Tier 1: Primary fast call with gemini-3.8-flash
     try {
-      const primaryRes = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents,
-        config: {
-          systemInstruction,
-          temperature: 0.7,
-          safetySettings: safetySettings as any,
-        },
-      });
+      const config = {
+        systemInstruction,
+        temperature: 0.7,
+        tools: [{ functionDeclarations: PATIENT_TOOL_DECLARATIONS }]
+      };
 
-      reply = primaryRes.text || '';
-      thought = `Understood context for ${elderName} with conversation turn count ${contents.length}. Grounded in live schedule (${pendingRoutines.length} pending routines), ${totalMemories} album memories, and answered naturally in ${preferredLanguage}.`;
-    } catch (errTier1: any) {
-      if (!isTransientOrQuota(errTier1)) {
-        console.info('[Saathi Companion] Tier 1 primary model notice:', errTier1?.message || errTier1);
-      }
-
-      // Tier 2: Try gemini-flash-latest alias
+      const contents = [{ role: 'user', parts: [{ text: message }] }];
+      let genRes: any;
       try {
-        const tier2Res = await ai.models.generateContent({
-          model: 'gemini-flash-latest',
-          contents,
-          config: {
-            systemInstruction,
-            temperature: 0.7,
-            safetySettings: safetySettings as any,
-          },
-        });
-        reply = tier2Res.text || '';
-        usedModel = 'gemini-flash-latest';
-        thought = `Delivered conversational reasoning for ${elderName} referencing patient context (${pendingRoutines.length} pending tasks) and answering query in ${preferredLanguage}.`;
-      } catch (errTier2: any) {
-        if (!isTransientOrQuota(errTier2)) {
-          console.info('[Saathi Companion] Tier 2 fallback notice:', errTier2?.message || errTier2);
+        genRes = await ai.models.generateContent({ model: 'gemini-3.8-flash', contents, config: config as any });
+      } catch (tier1Err: any) {
+        // High demand or temporary service spike -> auto-fallback to high-availability gemini-3.1-flash-lite
+        usedModel = 'gemini-3.1-flash-lite';
+        genRes = await ai.models.generateContent({ model: 'gemini-3.1-flash-lite', contents, config: config as any });
+      }
+
+      if (genRes.functionCalls && genRes.functionCalls.length > 0) {
+        const call = genRes.functionCalls[0];
+        executedTools.push(call.name);
+        let toolResult;
+        try {
+          toolResult = await executePatientTool(authorizedPatientId, call.name, call.args || {});
+        } catch (e) {
+          toolResult = { error: "Could not fetch data at this moment." };
         }
 
-        // Tier 3: Call gemini-3.1-flash-lite as lightweight high-availability fallback
+        const bypassConfig = { systemInstruction, temperature: 0.7 };
+        const followUpContents = [
+          { role: 'user', parts: [{ text: message }] },
+          { role: 'user', parts: [{ text: `[SYSTEM: Tool '${call.name}' returned: ${JSON.stringify(toolResult)}. Answer the user smoothly based on this.]` }] }
+        ];
+
+        let followUpRes: any;
         try {
-          const tier3Res = await ai.models.generateContent({
-            model: 'gemini-3.1-flash-lite',
-            contents,
-            config: {
-              systemInstruction,
-              temperature: 0.7,
-              safetySettings: safetySettings as any,
-            },
-          });
-          reply = tier3Res.text || '';
-          usedModel = 'gemini-3.1-flash-lite';
-          thought = `Provided fast fallback response for ${elderName} referencing daily context in ${preferredLanguage}.`;
-        } catch (errTier3: any) {
-          if (!isTransientOrQuota(errTier3)) {
-            console.info('[Saathi Companion] Tier 3 fallback notice:', errTier3?.message || errTier3);
-          }
+          followUpRes = await ai.models.generateContent({ model: usedModel, contents: followUpContents, config: bypassConfig as any });
+        } catch (tier1FollowUpErr: any) {
+          followUpRes = await ai.models.generateContent({ model: 'gemini-3.1-flash-lite', contents: followUpContents, config: bypassConfig as any });
         }
+        reply = followUpRes.text || '';
+      } else {
+        reply = genRes.text || '';
       }
+    } catch (err: any) {
+      console.error('[Saathi API Error]:', err?.message);
     }
   }
 

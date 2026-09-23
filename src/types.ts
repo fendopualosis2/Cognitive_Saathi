@@ -239,6 +239,7 @@ export interface CaretakerProfile {
   relation: string;
   avatarUrl?: string;
   assignedPatientIds: string[];
+  linkedPatientId?: string;
   patientRemovalNotices?: PatientRemovalNotice[];
 }
 

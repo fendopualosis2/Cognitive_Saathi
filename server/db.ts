@@ -850,8 +850,9 @@ export class ServerDB {
         if (!caretaker.assignedPatientIds.includes(patient.id)) {
           caretaker.assignedPatientIds.push(patient.id);
         }
+        caretaker.linkedPatientId = patient.id;
 
-        patient.linkedCaregiverKey = caretaker.caregiverKey;
+        patient.linkedCaregiverKey = caretaker.caregiverKey || caretaker.id;
         patient.caregiverName = `${caretaker.fullName} (${caretaker.relation || 'Caregiver'})`;
         patient.caregiverPhone = caretaker.phone;
         patient.hasCaregiver = true;

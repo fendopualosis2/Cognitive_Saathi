@@ -263,7 +263,7 @@ export default function App() {
       fetchPendingRequests(currentPatient.id);
       const timer = setInterval(() => {
         fetchPendingRequests(currentPatient.id);
-      }, 4000);
+      }, 5000);
       return () => clearInterval(timer);
     }
   }, [role, currentPatient?.id, fetchPendingRequests]);

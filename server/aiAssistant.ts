@@ -813,7 +813,25 @@ COGNITIVE ACTIVITIES:
   const executedTools: any[] = [];
 
   if (ai) {
-    // Tier 1: Primary call with gemini-3.8-flash and Google Search tool for comprehensive world knowledge
+    // Helper to detect quota / rate limiting / unavailability
+    const isTransientOrQuota = (err: any) => {
+      const msg = String(err?.message || err || '');
+      const code = err?.status || err?.code;
+      return (
+        code === 429 ||
+        code === 503 ||
+        code === 'RESOURCE_EXHAUSTED' ||
+        code === 'UNAVAILABLE' ||
+        msg.includes('429') ||
+        msg.includes('503') ||
+        msg.includes('quota') ||
+        msg.includes('high demand') ||
+        msg.includes('RESOURCE_EXHAUSTED') ||
+        msg.includes('UNAVAILABLE')
+      );
+    };
+
+    // Tier 1: Primary fast call with gemini-3.8-flash
     try {
       const primaryRes = await ai.models.generateContent({
         model: 'gemini-3.8-flash',
@@ -822,19 +840,20 @@ COGNITIVE ACTIVITIES:
           systemInstruction,
           temperature: 0.7,
           safetySettings: safetySettings as any,
-          tools: [{ googleSearch: {} }],
         },
       });
 
       reply = primaryRes.text || '';
       thought = `Understood context for ${elderName} with conversation turn count ${contents.length}. Grounded in live schedule (${pendingRoutines.length} pending routines), ${totalMemories} album memories, and answered naturally in ${preferredLanguage}.`;
     } catch (errTier1: any) {
-      console.info('[Saathi Companion] Tier 1 search-grounded call notice, attempting direct model call:', errTier1?.message || errTier1);
+      if (!isTransientOrQuota(errTier1)) {
+        console.info('[Saathi Companion] Tier 1 primary model notice:', errTier1?.message || errTier1);
+      }
 
-      // Tier 2: Call gemini-3.8-flash directly without search tool (in case search grounding threw or was rate-limited)
+      // Tier 2: Try gemini-flash-latest alias
       try {
         const tier2Res = await ai.models.generateContent({
-          model: 'gemini-3.8-flash',
+          model: 'gemini-flash-latest',
           contents,
           config: {
             systemInstruction,
@@ -843,11 +862,14 @@ COGNITIVE ACTIVITIES:
           },
         });
         reply = tier2Res.text || '';
-        thought = `Delivered direct conversational reasoning for ${elderName} referencing patient context (${pendingRoutines.length} pending tasks) and answering general query in ${preferredLanguage}.`;
+        usedModel = 'gemini-flash-latest';
+        thought = `Delivered conversational reasoning for ${elderName} referencing patient context (${pendingRoutines.length} pending tasks) and answering query in ${preferredLanguage}.`;
       } catch (errTier2: any) {
-        console.info('[Saathi Companion] Tier 2 call notice, attempting flash-lite fallback:', errTier2?.message || errTier2);
+        if (!isTransientOrQuota(errTier2)) {
+          console.info('[Saathi Companion] Tier 2 fallback notice:', errTier2?.message || errTier2);
+        }
 
-        // Tier 3: Call gemini-3.1-flash-lite as high-speed fallback
+        // Tier 3: Call gemini-3.1-flash-lite as lightweight high-availability fallback
         try {
           const tier3Res = await ai.models.generateContent({
             model: 'gemini-3.1-flash-lite',
@@ -862,7 +884,9 @@ COGNITIVE ACTIVITIES:
           usedModel = 'gemini-3.1-flash-lite';
           thought = `Provided fast fallback response for ${elderName} referencing daily context in ${preferredLanguage}.`;
         } catch (errTier3: any) {
-          console.warn('[Saathi Companion] All AI model tiers failed, routing to contextual offline generator:', errTier3?.message || errTier3);
+          if (!isTransientOrQuota(errTier3)) {
+            console.info('[Saathi Companion] Tier 3 fallback notice:', errTier3?.message || errTier3);
+          }
         }
       }
     }

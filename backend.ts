@@ -21,28 +21,6 @@ const PORT = 3000;
 
 app.use(express.json({ limit: '30mb' }));
 
-// Universal Firestore Cloud Sync Middleware for Vercel Serverless
-app.use(async (req, res, next) => {
-  if (req.path.startsWith('/api')) {
-    try {
-      await ServerDB.syncFromCloud();
-    } catch (err) {
-      console.warn('Pre-request Firestore sync notice:', err);
-    }
-
-    // Intercept response to ensure Firestore write completes before serverless lambda exits
-    const originalJson = res.json.bind(res);
-    res.json = function (body: any) {
-      ServerDB.syncToCloud()
-        .catch((err) => console.error('Post-request Firestore sync failed:', err))
-        .finally(() => {
-          originalJson(body);
-        });
-      return res;
-    };
-  }
-  next();
-});
 
 // In-memory cryptographically secure active sessions table
 interface SessionData {
@@ -246,6 +224,7 @@ app.post('/api/auth/register', async (req, res) => {
         dailyStreak: 0,
         todayCompletedCount: 0,
         linkedCaregiverKey: '',
+        lastLoginDate: '', // Ensure this baseline is present
       };
 
       ServerDB.addPatient(newPatient);
@@ -343,7 +322,35 @@ app.post('/api/auth/login', async (req, res) => {
       if (patient.password && !patient.password.startsWith('$scrypt$')) {
         patient.password = hashPassword(patient.password);
         ServerDB.addPatient(patient);
+        await ServerDB.syncToCloud();
       }
+
+      // --- CALENDAR-DAY STREAK TRACKING ---
+      const todayStr = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+
+      if (patient.lastLoginDate !== todayStr) {
+        if (!patient.lastLoginDate) {
+          // First login ever or migrating existing profile
+          patient.dailyStreak = 1;
+        } else {
+          const lastDate = new Date(patient.lastLoginDate);
+          const currDate = new Date(todayStr);
+          const diffTime = currDate.getTime() - lastDate.getTime();
+          const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+          if (diffDays === 1) {
+            // Logged in exactly the next consecutive day
+            patient.dailyStreak = (patient.dailyStreak || 0) + 1;
+          } else if (diffDays > 1) {
+            // Missed a day or more: reset streak to 1
+            patient.dailyStreak = 1;
+          }
+        }
+        patient.lastLoginDate = todayStr;
+        ServerDB.addPatient(patient);
+        await ServerDB.syncToCloud();
+      }
+      // ------------------------------------
 
       // Cryptographically secure session token
       const sessionToken = createSecureSession(patient.id, 'PATIENT');
@@ -374,6 +381,7 @@ app.post('/api/auth/login', async (req, res) => {
       if (caretaker.password && !caretaker.password.startsWith('$scrypt$')) {
         caretaker.password = hashPassword(caretaker.password);
         ServerDB.addCaretaker(caretaker);
+        await ServerDB.syncToCloud();
       }
 
       // Find assigned patient for this caregiver
@@ -634,13 +642,14 @@ app.get('/api/routines/:patientId', requirePatientAuth, (req, res) => {
   res.json(ServerDB.getRoutines(req.params.patientId));
 });
 
-app.post('/api/routines/:patientId', requirePatientAuth, (req, res) => {
+app.post('/api/routines/:patientId', requirePatientAuth, async (req, res) => {
   const routines = req.body;
   if (!Array.isArray(routines)) {
     res.status(400).json({ error: 'Routines must be an array' });
     return;
   }
   const updated = ServerDB.saveRoutines(req.params.patientId, routines);
+  await ServerDB.syncToCloud();
   res.json(updated);
 });
 
@@ -649,13 +658,14 @@ app.get('/api/reminders/:patientId', requirePatientAuth, (req, res) => {
   res.json(ServerDB.getReminders(req.params.patientId));
 });
 
-app.post('/api/reminders/:patientId', requirePatientAuth, (req, res) => {
+app.post('/api/reminders/:patientId', requirePatientAuth, async (req, res) => {
   const reminders = req.body;
   if (!Array.isArray(reminders)) {
     res.status(400).json({ error: 'Reminders must be an array' });
     return;
   }
   const updated = ServerDB.saveReminders(req.params.patientId, reminders);
+  await ServerDB.syncToCloud();
   res.json(updated);
 });
 
@@ -664,18 +674,20 @@ app.get('/api/memories/:patientId', requirePatientAuth, (req, res) => {
   res.json(ServerDB.getMemories(req.params.patientId));
 });
 
-app.post('/api/memories/:patientId', requirePatientAuth, (req, res) => {
+app.post('/api/memories/:patientId', requirePatientAuth, async (req, res) => {
   const memory = req.body;
   if (!memory || !memory.id) {
     res.status(400).json({ error: 'Invalid memory data' });
     return;
   }
   const updated = ServerDB.addMemory(req.params.patientId, memory);
+  await ServerDB.syncToCloud();
   res.json(updated);
 });
 
-app.delete('/api/memories/:patientId/:memoryId', requirePatientAuth, (req, res) => {
+app.delete('/api/memories/:patientId/:memoryId', requirePatientAuth, async (req, res) => {
   const updated = ServerDB.deleteMemory(req.params.patientId, req.params.memoryId);
+  await ServerDB.syncToCloud();
   res.json(updated);
 });
 
@@ -684,17 +696,18 @@ app.get('/api/people/:patientId', requirePatientAuth, (req, res) => {
   res.json(ServerDB.getPeople(req.params.patientId));
 });
 
-app.post('/api/people/:patientId', requirePatientAuth, (req, res) => {
+app.post('/api/people/:patientId', requirePatientAuth, async (req, res) => {
   const person = req.body;
   if (!person || !person.id || !person.name) {
     res.status(400).json({ error: 'Invalid person data: name is required' });
     return;
   }
   const updated = ServerDB.addPerson(req.params.patientId, person);
+  await ServerDB.syncToCloud();
   res.json(updated);
 });
 
-app.put('/api/people/:patientId/:personId', requirePatientAuth, (req, res) => {
+app.put('/api/people/:patientId/:personId', requirePatientAuth, async (req, res) => {
   const person = req.body;
   if (!person || !person.name) {
     res.status(400).json({ error: 'Invalid person data' });
@@ -702,11 +715,13 @@ app.put('/api/people/:patientId/:personId', requirePatientAuth, (req, res) => {
   }
   person.id = req.params.personId;
   const updated = ServerDB.updatePerson(req.params.patientId, person);
+  await ServerDB.syncToCloud();
   res.json(updated);
 });
 
-app.delete('/api/people/:patientId/:personId', requirePatientAuth, (req, res) => {
+app.delete('/api/people/:patientId/:personId', requirePatientAuth, async (req, res) => {
   const updated = ServerDB.deletePerson(req.params.patientId, req.params.personId);
+  await ServerDB.syncToCloud();
   res.json(updated);
 });
 
@@ -715,13 +730,14 @@ app.get('/api/sessions/:patientId', requirePatientAuth, (req, res) => {
   res.json(ServerDB.getSessions(req.params.patientId));
 });
 
-app.post('/api/sessions/:patientId', requirePatientAuth, (req, res) => {
+app.post('/api/sessions/:patientId', requirePatientAuth, async (req, res) => {
   const session = req.body;
   if (!session || !session.id) {
     res.status(400).json({ error: 'Invalid session data' });
     return;
   }
   const updated = ServerDB.addSession(req.params.patientId, session);
+  await ServerDB.syncToCloud();
   res.json(updated);
 });
 

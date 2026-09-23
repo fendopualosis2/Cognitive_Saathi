@@ -291,6 +291,70 @@ export default function App() {
     }
   };
 
+  const fetchPatientData = useCallback(async (patientId: string) => {
+    if (!patientId) return;
+
+    try {
+      // 1. Fetch routines
+      const routinesRes = await fetch(`/api/routines/${patientId}`);
+      if (routinesRes.ok) {
+        const serverRoutines = await routinesRes.json();
+        if (Array.isArray(serverRoutines)) {
+          setRoutines(serverRoutines);
+          OfflineStore.saveRoutines(patientId, serverRoutines);
+        }
+      }
+    } catch {}
+
+    try {
+      // 2. Fetch reminders
+      const remindersRes = await fetch(`/api/reminders/${patientId}`);
+      if (remindersRes.ok) {
+        const serverReminders = await remindersRes.json();
+        if (Array.isArray(serverReminders)) {
+          setReminders(serverReminders);
+          OfflineStore.saveReminders(patientId, serverReminders);
+        }
+      }
+    } catch {}
+
+    try {
+      // 3. Fetch fresh memories from server
+      const memoriesRes = await fetch(`/api/memories/${patientId}`);
+      if (memoriesRes.ok) {
+        const serverMemories = await memoriesRes.json();
+        if (Array.isArray(serverMemories) && serverMemories.length > 0) {
+          setMemories(serverMemories);
+          OfflineStore.saveMemories(patientId, serverMemories);
+        }
+      }
+    } catch {}
+
+    try {
+      // 4. Fetch fresh people from server
+      const peopleRes = await fetch(`/api/people/${patientId}`);
+      if (peopleRes.ok) {
+        const serverPeople = await peopleRes.json();
+        if (Array.isArray(serverPeople)) {
+          setPeople(serverPeople);
+          OfflineStore.savePeople(patientId, serverPeople);
+        }
+      }
+    } catch {}
+
+    try {
+      // 5. Fetch fresh sessions from server
+      const sessionsRes = await fetch(`/api/sessions/${patientId}`);
+      if (sessionsRes.ok) {
+        const serverSessions = await sessionsRes.json();
+        if (Array.isArray(serverSessions) && serverSessions.length > 0) {
+          setSessions(serverSessions);
+          serverSessions.forEach((s: any) => OfflineStore.saveSession(s));
+        }
+      }
+    } catch {}
+  }, []);
+
   const loadPatientData = (patientId: string) => {
     const r = OfflineStore.getRoutines(patientId);
     setRoutines(r);
@@ -307,39 +371,25 @@ export default function App() {
     const sess = OfflineStore.getSessions(patientId);
     setSessions(sess);
 
-    // Fetch fresh sessions from server
-    fetch(`/api/sessions/${patientId}`)
-      .then((res) => (res.ok ? res.json() : []))
-      .then((serverSessions) => {
-        if (Array.isArray(serverSessions) && serverSessions.length > 0) {
-          setSessions(serverSessions);
-          serverSessions.forEach((s) => OfflineStore.saveSession(s));
-        }
-      })
-      .catch(() => {});
-
-    // Fetch fresh memories from server
-    fetch(`/api/memories/${patientId}`)
-      .then((res) => (res.ok ? res.json() : []))
-      .then((serverMemories) => {
-        if (Array.isArray(serverMemories) && serverMemories.length > 0) {
-          setMemories(serverMemories);
-          OfflineStore.saveMemories(patientId, serverMemories);
-        }
-      })
-      .catch(() => {});
-
-    // Fetch fresh people from server (blank at first until user/caretaker adds)
-    fetch(`/api/people/${patientId}`)
-      .then((res) => (res.ok ? res.json() : []))
-      .then((serverPeople) => {
-        if (Array.isArray(serverPeople)) {
-          setPeople(serverPeople);
-          OfflineStore.savePeople(patientId, serverPeople);
-        }
-      })
-      .catch(() => {});
+    // Immediately trigger fresh network fetch
+    fetchPatientData(patientId);
   };
+
+  // Instant Background Polling: Fetch fresh patient data every 5 seconds without WebSockets
+  useEffect(() => {
+    if (!currentPatient?.id) return;
+
+    // 1. Initial immediate fetch on mount / patient change
+    fetchPatientData(currentPatient.id);
+
+    // 2. Short polling interval every 5000ms
+    const pollInterval = setInterval(() => {
+      fetchPatientData(currentPatient.id);
+    }, 5000);
+
+    // 3. Cleanup on unmount or patient change
+    return () => clearInterval(pollInterval);
+  }, [currentPatient?.id, fetchPatientData]);
 
   const fetchPatientsList = async () => {
     try {

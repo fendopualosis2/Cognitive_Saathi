@@ -86,6 +86,91 @@ function verifyPatientAuthorization(req: express.Request, patientId: string): bo
   return false;
 }
 
+// Helper to resolve and authorize targetPatientId for mutating routines, reminders, and memories endpoints
+function resolveTargetPatientId(req: express.Request): { targetPatientId?: string; errorStatus?: number; errorMessage?: string } {
+  const paramPatientId = req.params.patientId;
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : (req.query.token as string);
+  const requesterId = (req.headers['x-user-id'] || req.headers['x-patient-id'] || req.headers['x-caretaker-id'] || req.query.requesterId) as string;
+
+  const db = ServerDB.ensureDbExists();
+
+  // 1. Check active session if available
+  if (token && activeSessions.has(token)) {
+    const session = activeSessions.get(token)!;
+    if (session.expiresAt >= Date.now()) {
+      if (session.role === 'PATIENT') {
+        const patient = db.patients.find((p) => p.id === session.userId);
+        if (patient) return { targetPatientId: patient.id };
+      } else if (session.role === 'CAREGIVER') {
+        const ct = db.caretakers.find((c) => c.id === session.userId);
+        if (ct) {
+          // If a specific patientId is requested in the URL that is assigned/linked to this caregiver
+          if (paramPatientId) {
+            const isAssigned = ct.assignedPatientIds?.includes(paramPatientId);
+            const pat = db.patients.find((p) => p.id === paramPatientId);
+            const isLinked = pat?.linkedCaregiverKey && ct.caregiverKey && pat.linkedCaregiverKey.toUpperCase() === ct.caregiverKey.toUpperCase();
+            if (isAssigned || isLinked) {
+              return { targetPatientId: paramPatientId };
+            }
+          }
+          // Default to first assigned or linked patient
+          if (ct.assignedPatientIds && ct.assignedPatientIds.length > 0) {
+            return { targetPatientId: ct.assignedPatientIds[0] };
+          }
+          if (ct.caregiverKey) {
+            const linkedPat = db.patients.find((p) => p.linkedCaregiverKey && p.linkedCaregiverKey.toUpperCase() === ct.caregiverKey!.toUpperCase());
+            if (linkedPat) return { targetPatientId: linkedPat.id };
+          }
+          return { errorStatus: 403, errorMessage: 'Caregiver has no linked patient profile.' };
+        }
+      }
+    }
+  }
+
+  // 2. Check explicit requester ID
+  if (requesterId) {
+    const asPatient = db.patients.find((p) => p.id === requesterId);
+    if (asPatient) {
+      return { targetPatientId: asPatient.id };
+    }
+    const asCaregiver = db.caretakers.find((c) => c.id === requesterId);
+    if (asCaregiver) {
+      if (paramPatientId) {
+        const isAssigned = asCaregiver.assignedPatientIds?.includes(paramPatientId);
+        const pat = db.patients.find((p) => p.id === paramPatientId);
+        const isLinked = pat?.linkedCaregiverKey && asCaregiver.caregiverKey && pat.linkedCaregiverKey.toUpperCase() === asCaregiver.caregiverKey.toUpperCase();
+        if (isAssigned || isLinked) {
+          return { targetPatientId: paramPatientId };
+        }
+      }
+      if (asCaregiver.assignedPatientIds && asCaregiver.assignedPatientIds.length > 0) {
+        return { targetPatientId: asCaregiver.assignedPatientIds[0] };
+      }
+      if (asCaregiver.caregiverKey) {
+        const linkedPat = db.patients.find((p) => p.linkedCaregiverKey && p.linkedCaregiverKey.toUpperCase() === asCaregiver.caregiverKey!.toUpperCase());
+        if (linkedPat) return { targetPatientId: linkedPat.id };
+      }
+      return { errorStatus: 403, errorMessage: 'Caregiver has no linked patient profile.' };
+    }
+  }
+
+  // 3. Direct patient parameter resolution
+  if (paramPatientId) {
+    const patient = db.patients.find((p) => p.id === paramPatientId);
+    if (patient) {
+      return { targetPatientId: patient.id };
+    }
+  }
+
+  // Fallback: Default to first patient if exists
+  if (db.patients.length > 0) {
+    return { targetPatientId: db.patients[0].id };
+  }
+
+  return { errorStatus: 403, errorMessage: 'No accessible patient profile found.' };
+}
+
 // Middleware for IDOR protection on patient telemetry
 function requirePatientAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
   const patientId = req.params.patientId;
@@ -411,8 +496,9 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // BUG #5 FIX: Implement GET /api/patients/:id endpoint
-app.get('/api/patients/:id', (req, res) => {
+app.get('/api/patients/:id', async (req, res) => {
   try {
+    await ServerDB.syncFromCloud();
     const patientId = req.params.id;
     if (!patientId || typeof patientId !== 'string') {
       res.status(400).json({ error: 'Invalid patient ID' });
@@ -638,112 +724,188 @@ app.post('/api/caretakers/:id/dismiss-notice', (req, res) => {
 });
 
 // Synchronized Routines APIs with IDOR verification
-app.get('/api/routines/:patientId', requirePatientAuth, (req, res) => {
-  res.json(ServerDB.getRoutines(req.params.patientId));
+app.get('/api/routines/:patientId', requirePatientAuth, async (req, res) => {
+  try {
+    await ServerDB.syncFromCloud();
+    const { targetPatientId } = resolveTargetPatientId(req);
+    const resolvedId = targetPatientId || req.params.patientId;
+    res.json(ServerDB.getRoutines(resolvedId));
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to retrieve routines', details: err?.message });
+  }
 });
 
 app.post('/api/routines/:patientId', requirePatientAuth, async (req, res) => {
+  const { targetPatientId, errorStatus, errorMessage } = resolveTargetPatientId(req);
+  if (!targetPatientId) {
+    res.status(errorStatus || 403).json({ error: errorMessage || 'Unauthorized: No linked patient profile.' });
+    return;
+  }
   const routines = req.body;
   if (!Array.isArray(routines)) {
     res.status(400).json({ error: 'Routines must be an array' });
     return;
   }
-  const updated = ServerDB.saveRoutines(req.params.patientId, routines);
+  const updated = ServerDB.saveRoutines(targetPatientId, routines);
   await ServerDB.syncToCloud();
   res.json(updated);
 });
 
 // Synchronized Reminders APIs with IDOR verification
-app.get('/api/reminders/:patientId', requirePatientAuth, (req, res) => {
-  res.json(ServerDB.getReminders(req.params.patientId));
+app.get('/api/reminders/:patientId', requirePatientAuth, async (req, res) => {
+  try {
+    await ServerDB.syncFromCloud();
+    const { targetPatientId } = resolveTargetPatientId(req);
+    const resolvedId = targetPatientId || req.params.patientId;
+    res.json(ServerDB.getReminders(resolvedId));
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to retrieve reminders', details: err?.message });
+  }
 });
 
 app.post('/api/reminders/:patientId', requirePatientAuth, async (req, res) => {
+  const { targetPatientId, errorStatus, errorMessage } = resolveTargetPatientId(req);
+  if (!targetPatientId) {
+    res.status(errorStatus || 403).json({ error: errorMessage || 'Unauthorized: No linked patient profile.' });
+    return;
+  }
   const reminders = req.body;
   if (!Array.isArray(reminders)) {
     res.status(400).json({ error: 'Reminders must be an array' });
     return;
   }
-  const updated = ServerDB.saveReminders(req.params.patientId, reminders);
+  const updated = ServerDB.saveReminders(targetPatientId, reminders);
   await ServerDB.syncToCloud();
   res.json(updated);
 });
 
 // Synchronized Memories APIs with IDOR verification
-app.get('/api/memories/:patientId', requirePatientAuth, (req, res) => {
-  res.json(ServerDB.getMemories(req.params.patientId));
+app.get('/api/memories/:patientId', requirePatientAuth, async (req, res) => {
+  try {
+    await ServerDB.syncFromCloud();
+    const { targetPatientId } = resolveTargetPatientId(req);
+    const resolvedId = targetPatientId || req.params.patientId;
+    res.json(ServerDB.getMemories(resolvedId));
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to retrieve memories', details: err?.message });
+  }
 });
 
 app.post('/api/memories/:patientId', requirePatientAuth, async (req, res) => {
+  const { targetPatientId, errorStatus, errorMessage } = resolveTargetPatientId(req);
+  if (!targetPatientId) {
+    res.status(errorStatus || 403).json({ error: errorMessage || 'Unauthorized: No linked patient profile.' });
+    return;
+  }
   const memory = req.body;
   if (!memory || !memory.id) {
     res.status(400).json({ error: 'Invalid memory data' });
     return;
   }
-  const updated = ServerDB.addMemory(req.params.patientId, memory);
+  const updated = ServerDB.addMemory(targetPatientId, memory);
   await ServerDB.syncToCloud();
   res.json(updated);
 });
 
 app.delete('/api/memories/:patientId/:memoryId', requirePatientAuth, async (req, res) => {
-  const updated = ServerDB.deleteMemory(req.params.patientId, req.params.memoryId);
+  const { targetPatientId, errorStatus, errorMessage } = resolveTargetPatientId(req);
+  if (!targetPatientId) {
+    res.status(errorStatus || 403).json({ error: errorMessage || 'Unauthorized: No linked patient profile.' });
+    return;
+  }
+  const updated = ServerDB.deleteMemory(targetPatientId, req.params.memoryId);
   await ServerDB.syncToCloud();
   res.json(updated);
 });
 
 // Synchronized People / Loved Ones APIs with IDOR verification
-app.get('/api/people/:patientId', requirePatientAuth, (req, res) => {
-  res.json(ServerDB.getPeople(req.params.patientId));
+app.get('/api/people/:patientId', requirePatientAuth, async (req, res) => {
+  try {
+    await ServerDB.syncFromCloud();
+    const { targetPatientId } = resolveTargetPatientId(req);
+    const resolvedId = targetPatientId || req.params.patientId;
+    res.json(ServerDB.getPeople(resolvedId));
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to retrieve people', details: err?.message });
+  }
 });
 
 app.post('/api/people/:patientId', requirePatientAuth, async (req, res) => {
+  const { targetPatientId, errorStatus, errorMessage } = resolveTargetPatientId(req);
+  if (!targetPatientId) {
+    res.status(errorStatus || 403).json({ error: errorMessage || 'Unauthorized: No linked patient profile.' });
+    return;
+  }
   const person = req.body;
   if (!person || !person.id || !person.name) {
     res.status(400).json({ error: 'Invalid person data: name is required' });
     return;
   }
-  const updated = ServerDB.addPerson(req.params.patientId, person);
+  const updated = ServerDB.addPerson(targetPatientId, person);
   await ServerDB.syncToCloud();
   res.json(updated);
 });
 
 app.put('/api/people/:patientId/:personId', requirePatientAuth, async (req, res) => {
+  const { targetPatientId, errorStatus, errorMessage } = resolveTargetPatientId(req);
+  if (!targetPatientId) {
+    res.status(errorStatus || 403).json({ error: errorMessage || 'Unauthorized: No linked patient profile.' });
+    return;
+  }
   const person = req.body;
   if (!person || !person.name) {
     res.status(400).json({ error: 'Invalid person data' });
     return;
   }
   person.id = req.params.personId;
-  const updated = ServerDB.updatePerson(req.params.patientId, person);
+  const updated = ServerDB.updatePerson(targetPatientId, person);
   await ServerDB.syncToCloud();
   res.json(updated);
 });
 
 app.delete('/api/people/:patientId/:personId', requirePatientAuth, async (req, res) => {
-  const updated = ServerDB.deletePerson(req.params.patientId, req.params.personId);
+  const { targetPatientId, errorStatus, errorMessage } = resolveTargetPatientId(req);
+  if (!targetPatientId) {
+    res.status(errorStatus || 403).json({ error: errorMessage || 'Unauthorized: No linked patient profile.' });
+    return;
+  }
+  const updated = ServerDB.deletePerson(targetPatientId, req.params.personId);
   await ServerDB.syncToCloud();
   res.json(updated);
 });
 
 // Synchronized Sessions & Real-time Reports APIs with IDOR verification
-app.get('/api/sessions/:patientId', requirePatientAuth, (req, res) => {
-  res.json(ServerDB.getSessions(req.params.patientId));
+app.get('/api/sessions/:patientId', requirePatientAuth, async (req, res) => {
+  try {
+    await ServerDB.syncFromCloud();
+    const { targetPatientId } = resolveTargetPatientId(req);
+    const resolvedId = targetPatientId || req.params.patientId;
+    res.json(ServerDB.getSessions(resolvedId));
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to retrieve sessions', details: err?.message });
+  }
 });
 
 app.post('/api/sessions/:patientId', requirePatientAuth, async (req, res) => {
+  const { targetPatientId, errorStatus, errorMessage } = resolveTargetPatientId(req);
+  if (!targetPatientId) {
+    res.status(errorStatus || 403).json({ error: errorMessage || 'Unauthorized: No linked patient profile.' });
+    return;
+  }
   const session = req.body;
   if (!session || !session.id) {
     res.status(400).json({ error: 'Invalid session data' });
     return;
   }
-  const updated = ServerDB.addSession(req.params.patientId, session);
+  const updated = ServerDB.addSession(targetPatientId, session);
   await ServerDB.syncToCloud();
   res.json(updated);
 });
 
 // Performance issue fix: Scoped /api/sync endpoint that only returns authorized data
-app.get('/api/sync', (req, res) => {
+app.get('/api/sync', async (req, res) => {
   try {
+    await ServerDB.syncFromCloud();
     const { role, caretakerId, patientId } = req.query as {
       role?: string;
       caretakerId?: string;

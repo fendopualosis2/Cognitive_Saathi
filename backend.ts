@@ -13,12 +13,36 @@ import {
   transcribeAudioWithGemini,
   generateSaathiCompanion,
   generateGeminiVoice,
+  safetySettings,
 } from './server/aiAssistant.js';
 
 const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: '30mb' }));
+
+// Universal Firestore Cloud Sync Middleware for Vercel Serverless
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    try {
+      await ServerDB.syncFromCloud();
+    } catch (err) {
+      console.warn('Pre-request Firestore sync notice:', err);
+    }
+
+    // Intercept response to ensure Firestore write completes before serverless lambda exits
+    const originalJson = res.json.bind(res);
+    res.json = function (body: any) {
+      ServerDB.syncToCloud()
+        .catch((err) => console.error('Post-request Firestore sync failed:', err))
+        .finally(() => {
+          originalJson(body);
+        });
+      return res;
+    };
+  }
+  next();
+});
 
 // In-memory cryptographically secure active sessions table
 interface SessionData {
@@ -1015,11 +1039,12 @@ Generate a structured daily report in JSON format matching this schema:
 
       try {
         const response = await ai.models.generateContent({
-          model: 'gemini-3.1-flash-lite',
+          model: 'gemini-3.8-flash',
           contents: prompt,
           config: {
             responseMimeType: 'application/json',
             temperature: 0.4,
+            safetySettings: safetySettings as any,
           },
         });
 
@@ -1099,11 +1124,12 @@ Return JSON array of objects with:
 
       try {
         const response = await ai.models.generateContent({
-          model: 'gemini-3.1-flash-lite',
+          model: 'gemini-3.6-flash',
           contents: prompt,
           config: {
             responseMimeType: 'application/json',
             temperature: 0.5,
+            safetySettings: safetySettings as any,
           },
         });
 
@@ -1478,12 +1504,13 @@ Return a JSON array conforming strictly to this format:
           config: {
             responseMimeType: 'application/json',
             temperature: 0.3,
+            safetySettings: safetySettings as any,
           },
         });
 
         parsed = JSON.parse(response.text || '[]');
       } catch (primaryErr: any) {
-        // If quota exceeded (429 / RESOURCE_EXHAUSTED) on 3.8-flash, seamlessly attempt 3.1-flash-lite
+        // If quota exceeded (429 / RESOURCE_EXHAUSTED), seamlessly attempt gemini-3.1-flash-lite retry
         const isQuotaOrRateLimit =
           primaryErr?.status === 429 ||
           String(primaryErr?.message || '').includes('429') ||
@@ -1499,6 +1526,7 @@ Return a JSON array conforming strictly to this format:
               config: {
                 responseMimeType: 'application/json',
                 temperature: 0.3,
+                safetySettings: safetySettings as any,
               },
             });
             parsed = JSON.parse(liteResponse.text || '[]');
@@ -1650,13 +1678,24 @@ Always call the tool first if asked about their day, schedule, or medications.`;
                 },
               ];
 
+              const safetySettings = [
+                { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+                { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+              ];
+
               let response = await ai.models.generateContent({
-                model: 'gemini-3.1-flash-lite',
+                model: 'gemini-3.8-flash',
                 contents,
                 config: {
                   systemInstruction,
                   temperature: 0.6,
-                  tools: [{ functionDeclarations: PATIENT_TOOL_DECLARATIONS as any }],
+                  safetySettings: safetySettings as any,
+                  tools: [
+                    { functionDeclarations: PATIENT_TOOL_DECLARATIONS as any },
+                    { googleSearch: {} }
+                  ],
                 },
               });
 
@@ -1693,11 +1732,16 @@ Always call the tool first if asked about their day, schedule, or medications.`;
                 ];
 
                 const followUpResponse = await ai.models.generateContent({
-                  model: 'gemini-3.1-flash-lite',
+                  model: 'gemini-3.8-flash',
                   contents: followUpContents,
                   config: {
                     systemInstruction,
                     temperature: 0.6,
+                    safetySettings: safetySettings as any,
+                    tools: [
+                      { functionDeclarations: PATIENT_TOOL_DECLARATIONS as any },
+                      { googleSearch: {} }
+                    ],
                   },
                 });
 

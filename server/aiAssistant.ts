@@ -2,6 +2,13 @@ import { GoogleGenAI, Modality } from '@google/genai';
 import { ServerDB } from './db.js';
 import { ReminderItem, RoutineTask } from '../src/types.js';
 
+export const safetySettings = [
+  { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+  { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+  { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+  { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+];
+
 export const PATIENT_TOOL_DECLARATIONS = [
   {
     name: 'get_patient_profile',
@@ -310,11 +317,12 @@ Respond ONLY with valid JSON in this structure:
     try {
 
       const res = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite',
+        model: 'gemini-3.8-flash',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
           temperature: 0.4,
+          safetySettings: safetySettings as any,
         },
       });
 
@@ -336,11 +344,12 @@ Respond ONLY with valid JSON in this structure:
       } catch (err) {
       try {
         const fallbackRes = await ai.models.generateContent({
-          model: 'gemini-3.8-flash',
+          model: 'gemini-3.1-flash-lite',
           contents: prompt,
           config: {
             responseMimeType: 'application/json',
             temperature: 0.4,
+            safetySettings: safetySettings as any,
           },
         });
         if (fallbackRes.text) {
@@ -427,16 +436,22 @@ Rules:
 
     try {
       const res = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite',
+        model: 'gemini-3.8-flash',
         contents: audioContent,
+        config: {
+          safetySettings: safetySettings as any,
+        },
       });
 
       return res.text ? res.text.trim() : '';
     } catch (liteErr: any) {
       try {
         const fallbackRes = await ai.models.generateContent({
-          model: 'gemini-3.8-flash',
+          model: 'gemini-3.1-flash-lite',
           contents: audioContent,
+          config: {
+            safetySettings: safetySettings as any,
+          },
         });
 
         return fallbackRes.text ? fallbackRes.text.trim() : '';
@@ -487,7 +502,8 @@ export function pcmToWav(
 }
 
 /**
- * Generate Gemini Voice audio using gemini-3.1-flash-tts-preview with automatic quota circuit-breaker
+ * Generate Gemini Voice audio using gemini-3.1-flash-tts-preview with automatic quota circuit-breaker.
+ * Uses soothing, natural female voice 'Kore' by default.
  */
 export async function generateGeminiVoice(
   ai: GoogleGenAI,
@@ -515,16 +531,16 @@ export async function generateGeminiVoice(
     if (!cleanSpeech) return null;
 
     // Keep voice synthesis concise and responsive (max 450 characters)
-    const promptText = `Say with gentle, warm eldercare comfort and soothing pacing: ${cleanSpeech.slice(0, 450)}`;
+    const promptText = `Speak in a very calm, gentle, warm, and soothing natural voice: ${cleanSpeech.slice(0, 450)}`;
 
     const res = await ai.models.generateContent({
       model: 'gemini-3.1-flash-tts-preview',
       contents: [{ parts: [{ text: promptText }] }],
       config: {
-        responseModalities: [Modality.AUDIO],
+        responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: { voiceName },
+            prebuiltVoiceConfig: { voiceName: voiceName || 'Kore' },
           },
         },
       },
@@ -699,9 +715,9 @@ export async function generateSaathiCompanion(params: SaathiCompanionParams): Pr
   const currentDate = userData?.currentDate || new Date().toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
   // 6. Assemble Master System Instruction with Ground Truth
-  const systemInstruction = `You are "Saathi" (সাথী), an exceptionally warm, intelligent, culturally rooted AI Companion and Eldercare Assistant for an elderly person living in Northeast India.
+  const systemInstruction = `You are "Saathi" (সাথী), an exceptionally warm, intelligent, empathetic, culturally rooted AI Companion and Eldercare Assistant for an elderly senior living in Northeast India.
 
-=== LIVE PATIENT DATA & GROUND TRUTH (MANDATORY FACTS) ===
+=== LIVE PATIENT PROFILE & CONTEXT (FOR PERSONAL & SCHEDULE QUESTIONS) ===
 • Senior's Name: ${elderName} (Age: ${age}, Cultural Region: ${region})
 • Current Date & Time: ${currentDate}, ${currentTime}
 • Daily Wellness Streak: ${streak} days
@@ -730,136 +746,187 @@ ${formattedPeople}
 
 CAREGIVER & CARE CIRCLE:
 • Family Caregiver: ${caregiverName} (Phone: ${caregiverPhone}, Family Caregiver)
-• You are in a safe, peaceful home environment.
+• Safe and peaceful home environment.
 
 COGNITIVE ACTIVITIES:
 • Completed ${sessions.length} brain exercise sessions. Daily streak: ${streak} days.
 
 === CORE INSTRUCTIONS FOR SAATHI ===
-1. ANSWER ANY QUESTION: You are a genuine, fully functional AI assistant, NOT a canned rule engine. You can converse on ANY topic: daily schedule, next activity, memories tab updates, family, cooking, tea gardens, Assam Bihu folklore, comforting words, science, nature, reassurance, or general conversation.
-2. GROUNDED IN USER'S REAL DATA:
-   - When asked "what is my schedule like", detail their actual schedule above, mentioning what is already completed and what is pending.
-   - When asked "what is my next activity" or "what do I do next", state their exact next activity from above (${nextActivity?.title || 'a relaxing pause'}) clearly and reassuringly!
-   - When asked "has the memories tab been updated" or about their memories/photos, confirm that the memories tab has ${totalMemories} memories, mention the latest memory title ("${latestMemory?.title || 'keepsake'}"), describe its photos and story warmly.
-   - When asked about family, loved ones, or who people are (like daughter, son, spouse), describe the loved ones in the People Tab, their birthday, wedding anniversary, what they like, and their traits warmly.
-   - When asked about medicine, check the reminders list and tell them whether their medicine was taken or is pending.
-   - When asked about their caregiver, reassure them that ${caregiverName} is taking wonderful care of them.
-3. TONE & EMPATHY:
-   - Speak with the immense love, patience, and gentleness of a devoted family member.
-   - For dementia and senior care, provide gentle reality orientation: always reassure them that they are safe at home and well cared for.
-   - Keep spoken replies pleasantly concise (2 to 4 sentences maximum) so that listening to the voice is calming and not overwhelming.
-4. LANGUAGE:
-   - Senior's selected language is "${preferredLanguage}".
-   - CRITICAL REQUIREMENT: You MUST formulate your entire response in this chosen language:
-     * If 'as': Respond strictly and warmly in Assamese (অসমীয়া).
-     * If 'hi': Respond strictly and politely in Hindi (हिन्दी).
-     * If 'mni': Respond strictly and gently in Manipuri (মৈতৈলোন্).
-     * If 'en': Respond in warm, gentle English.
-   - Do NOT revert to English when 'as', 'hi', or 'mni' is chosen. Every sentence must match the user's active language.`;
+1. NATURAL CONVERSATIONAL AI & GENERAL KNOWLEDGE:
+   - You are a fully capable, knowledgeable, and caring conversational companion.
+   - Answer ANY question the user asks freely and accurately — including general knowledge, science, everyday topics, storytelling, philosophy, history, geography, arts, outside world, daily news, personal reflections, humor, reassurance, or general conversation.
+   - NEVER restrict yourself to only healthcare or routine topics.
+   - For follow-up questions, pay close attention to the conversation history, understand what the user is referring to, and maintain coherent context across turns.
 
-  // 7. Build Conversation Contents
+2. GROUNDING IN PERSONAL PATIENT DATA:
+   - When the user asks about their schedule, routines, medications, family, memories, or care circle, ground your response accurately in the LIVE PATIENT DATA provided above.
+   - Speak naturally as a loving companion who genuinely knows and cares for them (e.g., "Good morning, ${elderName}! You've already taken your morning tea, and next we have your peaceful walk.").
+   - Never use robotic phrases like "According to the database", "I have accessed your file", or "As an AI".
+
+3. CONVERSATION FLOW & AVOIDING REPETITION:
+   - Do NOT repeat the initial greeting ("Hello", "Namaste", "I am Saathi") in every message once the conversation has started.
+   - Do NOT repeat the exact same phrasing from previous turns unless the user explicitly asks for clarification or repetition.
+   - Keep answers natural, warm, and concise (1-3 sentences), making them easy and comfortable for a senior to listen to or read.
+
+4. LANGUAGE CONSISTENCY:
+   - The user's preferred language is "${preferredLanguage}". Formulate your response naturally in this language (English, Assamese / অসমীয়া, Hindi / हिन्दी, or Manipuri / মৈতৈলোন্).`;
+
+  // 7. Build and Sanitize Conversation Contents for Multi-Turn Dialog
   const contents: any[] = [];
   if (Array.isArray(history) && history.length > 0) {
-    for (const item of history.slice(-6)) {
-      if (item.sender === 'user') {
-        contents.push({ role: 'user', parts: [{ text: item.text }] });
-      } else if (item.sender === 'saathi') {
-        contents.push({ role: 'model', parts: [{ text: item.text }] });
+    for (const item of history.slice(-10)) {
+      if (!item || !item.text || typeof item.text !== 'string' || !item.text.trim()) continue;
+      const text = item.text.trim();
+      const role = item.sender === 'user' ? 'user' : 'model';
+
+      // Gemini multi-turn content must begin with a 'user' turn
+      if (contents.length === 0 && role === 'model') {
+        continue;
+      }
+
+      // Merge sequential turns with the same role to maintain strict alternation
+      const prev = contents[contents.length - 1];
+      if (prev && prev.role === role) {
+        prev.parts[0].text += `\n${text}`;
+      } else {
+        contents.push({ role, parts: [{ text }] });
       }
     }
   }
 
-  contents.push({
-    role: 'user',
-    parts: [{ text: message }],
-  });
+  // Append current user message
+  const lastTurn = contents[contents.length - 1];
+  if (lastTurn && lastTurn.role === 'user') {
+    if (lastTurn.parts[0].text.trim() !== message.trim()) {
+      lastTurn.parts[0].text += `\n${message.trim()}`;
+    }
+  } else {
+    contents.push({
+      role: 'user',
+      parts: [{ text: message.trim() }],
+    });
+  }
 
   let reply = '';
   let thought = '';
-  let usedModel = 'gemini-3.1-flash-lite';
+  let usedModel = 'gemini-3.8-flash';
   const executedTools: any[] = [];
 
   if (ai) {
-    // Primary: Gemini 3.1 Flash-Lite for ultra-fast, reliable reasoning and low latency voice
+    // Tier 1: Primary call with gemini-3.8-flash and Google Search tool for comprehensive world knowledge
     try {
-      const liteRes = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite',
+      const primaryRes = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
         contents,
         config: {
           systemInstruction,
           temperature: 0.7,
+          safetySettings: safetySettings as any,
+          tools: [{ googleSearch: {} }],
         },
       });
 
-      reply = liteRes.text || '';
-      thought = `Evaluated elder profile for ${elderName} (${age}, ${region}). Verified real-time schedule: ${routinesList.length} routines total (${completedRoutines.length} done, ${pendingRoutines.length} remaining). Next upcoming activity: ${nextActivity?.title || 'rest'}. Checked memories album: ${totalMemories} keepsakes saved, latest "${latestMemory?.title || 'Family Keepsake'}". Formulated gentle, grounded response in ${preferredLanguage}.`;
-    } catch (errLite: any) {
+      reply = primaryRes.text || '';
+      thought = `Understood context for ${elderName} with conversation turn count ${contents.length}. Grounded in live schedule (${pendingRoutines.length} pending routines), ${totalMemories} album memories, and answered naturally in ${preferredLanguage}.`;
+    } catch (errTier1: any) {
+      console.info('[Saathi Companion] Tier 1 search-grounded call notice, attempting direct model call:', errTier1?.message || errTier1);
+
+      // Tier 2: Call gemini-3.8-flash directly without search tool (in case search grounding threw or was rate-limited)
       try {
-        const genRes = await ai.models.generateContent({
+        const tier2Res = await ai.models.generateContent({
           model: 'gemini-3.8-flash',
           contents,
           config: {
             systemInstruction,
             temperature: 0.7,
+            safetySettings: safetySettings as any,
           },
         });
-        reply = genRes.text || '';
-        usedModel = 'gemini-3.8-flash';
-        thought = `Reasoned through elder inquiry against live schedule (${pendingRoutines.length} pending items), verified ${totalMemories} memories in album, and formulated gentle, reassuring guidance for ${elderName}.`;
-      } catch (err38: any) {
-        // Handled smoothly by multilingual grounded fallback below
+        reply = tier2Res.text || '';
+        thought = `Delivered direct conversational reasoning for ${elderName} referencing patient context (${pendingRoutines.length} pending tasks) and answering general query in ${preferredLanguage}.`;
+      } catch (errTier2: any) {
+        console.info('[Saathi Companion] Tier 2 call notice, attempting flash-lite fallback:', errTier2?.message || errTier2);
+
+        // Tier 3: Call gemini-3.1-flash-lite as high-speed fallback
+        try {
+          const tier3Res = await ai.models.generateContent({
+            model: 'gemini-3.1-flash-lite',
+            contents,
+            config: {
+              systemInstruction,
+              temperature: 0.7,
+              safetySettings: safetySettings as any,
+            },
+          });
+          reply = tier3Res.text || '';
+          usedModel = 'gemini-3.1-flash-lite';
+          thought = `Provided fast fallback response for ${elderName} referencing daily context in ${preferredLanguage}.`;
+        } catch (errTier3: any) {
+          console.warn('[Saathi Companion] All AI model tiers failed, routing to contextual offline generator:', errTier3?.message || errTier3);
+        }
       }
     }
   }
 
-  // 8. Dynamic Multilingual Grounded Fallback (if offline/unreachable)
+  // 8. Context-Aware Multilingual Fallback (strictly for zero-connectivity/offline environments)
   if (!reply) {
-    const isSchedule = /schedule|routine|today|plan|কৰিম|दिनಚৰ্যা|दिन/i.test(message);
-    const isNext = /next|after|পৰৱৰ্তী|এরপর|क्या करू|आगे/i.test(message);
-    const isMemory = /memory|memories|photo|album|ছবি|স্মৃতি|তছবি|तस्वीर|याद/i.test(message);
-    const isMedicine = /medicine|tablet|pill|দৰব|औषध|दवा/i.test(message);
+    const isSchedule = /schedule|routine|today|plan|কৰিম|দিন|দিনচৰ্যা|समय/i.test(message);
+    const isNext = /next|after|পৰৱৰ্তী|এরপর|কি কৰিম|क्या करू|आगे|मथংগী/i.test(message);
+    const isMemory = /memory|memories|photo|album|ছবি|স্মৃতি|तस्वीर|याद|নিংশিং/i.test(message);
+    const isMedicine = /medicine|tablet|pill|health|দৰব|ঔষধ|दवा|হিদাক/i.test(message);
+    const isGreeting = /hello|hi|hey|নমস্কাৰ|नमस्ते|খুরুমজরি/i.test(message);
 
     if (preferredLanguage === 'as') {
-      if (isNext || isSchedule) {
+      if (isNext) {
         reply = `আপোনাৰ পৰৱৰ্তী কাৰ্য্যসূচী হ'ল: ${nextActivity?.title || 'বাৰাণ্ডাত জিৰণি লোৱা'}। আপুনি ঘৰতে সম্পূৰ্ণ শান্তিত আছে।`;
+      } else if (isSchedule) {
+        reply = `আজি আপোনাৰ ${routinesList.length} টা কাৰ্য্যসূচী আছে। ${completedRoutines.length} টা সম্পূৰ্ণ হৈছে।`;
       } else if (isMemory) {
         reply = `আপোনাৰ সোঁৱৰণি (Memories) টেবটোত ${totalMemories} টা সুন্দৰ স্মৃতি সংৰক্ষিত আছে। শেহতীয়া স্মৃতিটো হ'ল "${latestMemory?.title || 'পৰিয়ালৰ স্মৃতি'}"।`;
       } else if (isMedicine) {
-        reply = `আপোনাৰ ঔষধৰ সকলো বিৱৰণ সুৰক্ষিতভাৱে ৰখা হৈছে। আপুনি সময়মতে সকলো পাই আছে।`;
+        reply = `আপোনাৰ ঔষধৰ সকলো বিৱৰণ সুৰক্ষিতভাৱে ৰখা হৈছে। সকলো সময়মতে হৈ আছে।`;
+      } else if (isGreeting) {
+        reply = `নমস্কাৰ ${elderName}! মই আপোনাৰ সাথী, আপোনাৰ লগত আছো। আপুনি কেনে অনুভৱ কৰিছে?`;
       } else {
-        reply = `নমস্কাৰ ${elderName}। মই সাথী, আপোনাৰ সংগী। আপুনি ঘৰত শান্তিত আৰু সুৰক্ষিতভাৱে আছে। মই আপোনাক সকলোতে সহায় কৰিবলৈ সাজু।`;
+        reply = `মই আপোনাৰ কথা শুনি আছোঁ, ${elderName}। আপুনি ঘৰতে শান্তিত আৰু সুৰক্ষিতভাৱে আছে।`;
       }
     } else if (preferredLanguage === 'hi') {
-      if (isNext || isSchedule) {
+      if (isNext) {
         reply = `आपकी अगली गतिविधि है: ${nextActivity?.title || 'बरामदे में विश्राम'}। आप घर पर पूरी तरह सुरक्षित और शांत हैं।`;
+      } else if (isSchedule) {
+        reply = `आज आपकी ${routinesList.length} दिनचर्या निर्धारित हैं, जिनमें से ${completedRoutines.length} पूरी हो चुकी हैं।`;
       } else if (isMemory) {
-        reply = `हाँ, आपकी मेमोरी टैब में कुल ${totalMemories} खूबसूरत यादें सुरक्षित हैं। आपकी हालिया याद "${latestMemory?.title || 'परिवार की याद'}" है।`;
+        reply = `हाँ, आपकी मेमोरी टैब में कुल ${totalMemories} खूबसूरत यादें सुरक्षित हैं। हालिया याद "${latestMemory?.title || 'परिवार की याद'}" है।`;
       } else if (isMedicine) {
-        reply = `आपकी दवाओं का रिकॉर्ड सुरक्षित है और सब कुछ नियम से चल रहा है।`;
+        reply = `आपकी दवाओं का रिकॉर्ड सुरक्षित है और सब कुछ सही समय पर चल रहा है।`;
+      } else if (isGreeting) {
+        reply = `नमस्ते ${elderName} जी! मैं साथी हूँ, आपके साथ। बताइए मैं आपकी क्या मदद करूँ?`;
       } else {
-        reply = `नमस्ते ${elderName} जी। मैं साथी हूँ। आप अपने घर पर सुरक्षित और शांत हैं। मैं हमेशा आपकी मदद के लिए यहाँ हूँ।`;
+        reply = `मैं आपकी बात सुन रहा हूँ, ${elderName} जी। आप बिल्कुल सुरक्षित हैं।`;
       }
     } else if (preferredLanguage === 'mni') {
       if (isNext || isSchedule) {
-        reply = `অদোমগী মথংগী থবক অসিনি: ${nextActivity?.title || 'য়ুমদা পোথাবা'}। অদোম য়ুমদা নিংথিনা অমসুং শান্তিনা লৈরি।`;
+        reply = `অদোমগী মথংগী থবক অসিনি: ${nextActivity?.title || 'য়ুমদা পোথাবা'}। অদোম য়ুমদা শান্তিনা লৈরি।`;
       } else if (isMemory) {
-        reply = `হৌজিক মেমোরিজ (Memories) তেবতা অপুনবা নিংশিংপোৎ ${totalMemories} লৈরে। খ্বাইদগী অনৌবা নিংশিংপোৎ অদুদি "${latestMemory?.title || 'ইমুংগী নিংশিংপোৎ'}" নি।`;
+        reply = `হৌজিক মেমোরিজ তেবতা অপুনবা নিংশিংপোৎ ${totalMemories} লৈরে।`;
       } else if (isMedicine) {
-        reply = `অদোমগী হিদাক্কী রেকোৰ্ড পুম্নমক শেংনা লৈরি। মতম চানা চাবগী থৌরাং য়াওরি।`;
+        reply = `অদোমগী হিদাক্কী রেকোৰ্ড পুম্নমক শেংনা লৈরি।`;
       } else {
-        reply = `খুরুমজরি ${elderName}। ঐহাক সাথীনি, অদোমগী সংগী। অদোম য়ুমদা শান্তিনা লৈরি, ঐহাক অদোমবু মতেং পাংনবা লৈরি।`;
+        reply = `খুরুমজরি ${elderName}। ঐহাক সাথীনি, অদোমগী লোইননা লৈরি।`;
       }
     } else {
       if (isNext) {
-        reply = `Your next scheduled activity is ${nextActivity?.title || 'a peaceful rest on the veranda'}, set for ${nextActivity?.time || 'today'}. You are right on track!`;
+        reply = `Your next scheduled activity is ${nextActivity?.title || 'a peaceful rest'}, planned for ${nextActivity?.time || 'today'}.`;
       } else if (isSchedule) {
-        reply = `Today you have ${routinesList.length} scheduled routines. ${completedRoutines.length} are completed, and your next step is ${nextActivity?.title || 'a quiet pause'}.`;
+        reply = `Today you have ${routinesList.length} scheduled routines, and ${completedRoutines.length} are already completed.`;
       } else if (isMemory) {
-        reply = `Yes! Your Memories tab currently has ${totalMemories} cherished keepsakes saved. The latest is "${latestMemory?.title || 'Family Memories'}" with lovely photos attached.`;
+        reply = `Your Memories tab currently has ${totalMemories} cherished keepsakes saved, including "${latestMemory?.title || 'Family Memories'}".`;
       } else if (isMedicine) {
-        reply = `All your health and medication reminders are safely tracked. You are doing wonderfully today!`;
+        reply = `All your health and medication reminders are safely tracked and up to date.`;
+      } else if (isGreeting) {
+        reply = `Hello ${elderName}! I am right here with you. How are you feeling right now?`;
       } else {
-        reply = `Hello ${elderName}. I am Saathi, your companion. You are safe at home, and I am here with you to help with your schedule, memories, or a peaceful conversation.`;
+        reply = `I am listening closely, ${elderName}. Tell me what's on your mind.`;
       }
     }
   }

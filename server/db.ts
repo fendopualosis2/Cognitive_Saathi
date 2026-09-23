@@ -78,19 +78,35 @@ export class ServerDB {
     const db = getDb();
     if (!db) return;
     try {
-      const snapshot = await getDoc(doc(db, 'serverless', 'database'));
+      const snapshot = await getDoc(doc(db, 'system', 'database'));
       if (snapshot.exists()) {
-        this.cache = snapshot.data() as DatabaseSchema;
+        const cloudData = snapshot.data() as DatabaseSchema;
+        this.cache = {
+          patients: cloudData.patients || [],
+          caretakers: cloudData.caretakers || [],
+          routines: cloudData.routines || {},
+          reminders: cloudData.reminders || {},
+          memories: cloudData.memories || {},
+          people: cloudData.people || {},
+          sessions: cloudData.sessions || {},
+          connectionRequests: cloudData.connectionRequests || [],
+          calendarEvents: cloudData.calendarEvents || {},
+        };
+        this.save(this.cache);
       }
-    } catch (e) { console.warn('Cloud sync read failed:', e); }
+    } catch (e) {
+      console.warn('Error reading from Firestore cloud sync:', e);
+    }
   }
 
   public static async syncToCloud(): Promise<void> {
     const db = getDb();
     if (!db || !this.cache) return;
     try {
-      await setDoc(doc(db, 'serverless', 'database'), this.cache);
-    } catch (e) { console.error('Cloud sync write failed:', e); }
+      await setDoc(doc(db, 'system', 'database'), this.cache);
+    } catch (e) {
+      console.error('Error writing to Firestore cloud sync:', e);
+    }
   }
 
   public static ensureDbExists(): DatabaseSchema {
@@ -303,12 +319,31 @@ export class ServerDB {
     return inPatients || inCaretakers;
   }
 
+  static isPatientKeyTaken(key: string, excludePatientId?: string): boolean {
+    const db = this.ensureDbExists();
+    const clean = key.trim().toUpperCase();
+    return db.patients.some((p) => p.id !== excludePatientId && (p.patientKey || '').toUpperCase() === clean);
+  }
+
+  static isCaregiverKeyTaken(key: string, excludeCaretakerId?: string): boolean {
+    const db = this.ensureDbExists();
+    const clean = key.trim().toUpperCase();
+    return db.caretakers.some((c) => c.id !== excludeCaretakerId && (c.caregiverKey || '').toUpperCase() === clean);
+  }
+
   // BUG #1 FIX: Strict identity matching by ID only. Never overwrite a user because of phone match with a different ID.
   static addPatient(patient: PatientProfile): PatientProfile {
     const db = this.ensureDbExists();
 
     // Check if updating existing user by explicit ID match
     const existingIndex = db.patients.findIndex((p) => p.id === patient.id);
+
+    // Validate unique patient key (never allow duplicates)
+    if (patient.patientKey) {
+      if (this.isPatientKeyTaken(patient.patientKey, patient.id)) {
+        throw new Error('This Patient ID is already taken by another account.');
+      }
+    }
 
     const normPhone = normalizePhoneNumber(patient.phone);
     if (normPhone && normPhone.length >= 10) {
@@ -333,8 +368,15 @@ export class ServerDB {
     }
 
     if (existingIndex >= 0) {
-      // UPDATE: Merge only onto the exact matching ID record
-      db.patients[existingIndex] = { ...db.patients[existingIndex], ...patient };
+      // UPDATE: Freeze and preserve the original immutable properties: id, patientKey, username, and creation timestamps
+      const existing = db.patients[existingIndex];
+      db.patients[existingIndex] = {
+        ...existing,
+        ...patient,
+        id: existing.id,
+        patientKey: existing.patientKey,
+        username: existing.username,
+      };
     } else {
       // CREATE: New patient
       db.patients.push(patient);
@@ -351,6 +393,13 @@ export class ServerDB {
 
     // Check if updating existing caretaker by explicit ID match
     const existingIndex = db.caretakers.findIndex((c) => c.id === caretaker.id);
+
+    // Validate unique caregiver key
+    if (caretaker.caregiverKey) {
+      if (this.isCaregiverKeyTaken(caretaker.caregiverKey, caretaker.id)) {
+        throw new Error('This Caregiver ID is already taken.');
+      }
+    }
 
     const normPhone = normalizePhoneNumber(caretaker.phone);
     if (normPhone && normPhone.length >= 10) {
@@ -375,8 +424,15 @@ export class ServerDB {
     }
 
     if (existingIndex >= 0) {
-      // UPDATE: Merge only onto the exact matching ID record
-      db.caretakers[existingIndex] = { ...db.caretakers[existingIndex], ...caretaker };
+      // UPDATE: Freeze and preserve id, caregiverKey, and username
+      const existing = db.caretakers[existingIndex];
+      db.caretakers[existingIndex] = {
+        ...existing,
+        ...caretaker,
+        id: existing.id,
+        caregiverKey: existing.caregiverKey,
+        username: existing.username,
+      };
     } else {
       // CREATE: New caretaker
       db.caretakers.push(caretaker);
@@ -396,7 +452,7 @@ export class ServerDB {
     if (!caretaker) return { success: false, error: 'Caregiver not found.' };
 
     const patient = this.findPatient(patientIdentifier);
-    if (!patient) return { success: false, error: 'No patient found with that key, mobile number, or username.' };
+    if (!patient) return { success: false, error: 'No registered patient found with that ID or Key. Please check the Patient ID.' };
 
     if (!caretaker.assignedPatientIds) caretaker.assignedPatientIds = [];
     if (!caretaker.assignedPatientIds.includes(patient.id)) {
@@ -418,42 +474,17 @@ export class ServerDB {
     caregiverKey: string
   ): { success: boolean; error?: string; caretaker?: CaretakerProfile; patient?: PatientProfile } {
     const db = this.ensureDbExists();
-    let patient = this.findPatient(patientId) || db.patients.find((p) => p.id === patientId);
+    const patient = this.findPatient(patientId) || db.patients.find((p) => p.id === patientId);
     if (!patient) {
-      patient = {
-        id: patientId,
-        fullName: 'Loved One',
-        preferredName: 'Patient',
-        username: patientId,
-        age: 70,
-        region: '',
-        state: '',
-        preferredLanguage: 'en',
-        caregiverName: '',
-        caregiverPhone: '',
-        avatarUrl: '',
-        dailyStreak: 0,
-        todayCompletedCount: 0,
-      };
-      db.patients.push(patient);
+      return { success: false, error: 'No registered patient found with that ID. Please check the Patient ID.' };
     }
 
     const keyClean = caregiverKey.trim().toUpperCase();
-    let caretaker = this.findCaretaker(keyClean) || db.caretakers.find(
+    const caretaker = this.findCaretaker(keyClean) || db.caretakers.find(
       (c) => (c.caregiverKey || '').toUpperCase() === keyClean
     );
     if (!caretaker) {
-      caretaker = {
-        id: `caretaker-${keyClean.toLowerCase().replace(/[^a-z0-9]/g, '') || Date.now()}`,
-        fullName: 'Family Caregiver',
-        username: 'caregiver',
-        relation: 'Family Caregiver',
-        phone: '9876543210',
-        caregiverKey: keyClean,
-        assignedPatientIds: [patient.id],
-        pin: '1234',
-      };
-      db.caretakers.push(caretaker);
+      return { success: false, error: 'No registered caregiver found with key "' + keyClean + '". Please enter a valid Caregiver ID.' };
     }
 
     if (!caretaker.assignedPatientIds) caretaker.assignedPatientIds = [];

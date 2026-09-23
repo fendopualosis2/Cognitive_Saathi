@@ -15,6 +15,7 @@ import {
   Brain,
   ChevronDown,
   ChevronUp,
+  Square,
 } from 'lucide-react';
 import { LanguageCode, PatientProfile } from '../types';
 
@@ -61,6 +62,7 @@ export const VoiceCompanionModal: React.FC<VoiceCompanionModalProps> = ({
   const [micPermissionDenied, setMicPermissionDenied] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
   const [expandedThoughts, setExpandedThoughts] = useState<Record<string, boolean>>({});
 
   // Audio recording & Speech recognition references
@@ -71,6 +73,25 @@ export const VoiceCompanionModal: React.FC<VoiceCompanionModalProps> = ({
   const timerIntervalRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const spokenMessageIdsRef = useRef<Set<string>>(new Set());
+
+  // Stop all active speech (both HTML5 Audio and Web Speech Synthesis)
+  const stopSpeaking = () => {
+    if (currentAudioRef.current) {
+      try {
+        currentAudioRef.current.pause();
+        currentAudioRef.current.currentTime = 0;
+      } catch {}
+      currentAudioRef.current = null;
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    }
+    setIsSpeaking(false);
+    setPlayingMessageId(null);
+  };
 
   // Reset or initialize on open
   useEffect(() => {
@@ -86,17 +107,18 @@ export const VoiceCompanionModal: React.FC<VoiceCompanionModalProps> = ({
           : `Hello ${name}. I am Saathi, your companion. You are safe at home, and I am right here with you. How can I comfort or help you today?`;
 
       if (messages.length === 0) {
+        const welcomeId = `msg-welcome-${Date.now()}`;
         const initialGreeting: CompanionMessage = {
-          id: `msg-welcome-${Date.now()}`,
+          id: welcomeId,
           sender: 'saathi',
           text: greeting,
         };
         setMessages([initialGreeting]);
-        if (autoSpeak) {
-          speakText(greeting);
+        if (autoSpeak && !spokenMessageIdsRef.current.has(welcomeId)) {
+          spokenMessageIdsRef.current.add(welcomeId);
+          speakText(greeting, welcomeId);
         }
       } else if (messages.length === 1 && messages[0].sender === 'saathi') {
-        // Dynamically update greeting text to match the newly changed language
         setMessages([{ ...messages[0], text: greeting }]);
       }
     }
@@ -111,16 +133,11 @@ export const VoiceCompanionModal: React.FC<VoiceCompanionModalProps> = ({
   useEffect(() => {
     if (!isOpen) {
       stopAllAudioInput();
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        setIsSpeaking(false);
-      }
+      stopSpeaking();
     }
     return () => {
       stopAllAudioInput();
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
+      stopSpeaking();
     };
   }, [isOpen]);
 
@@ -128,11 +145,6 @@ export const VoiceCompanionModal: React.FC<VoiceCompanionModalProps> = ({
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
-    }
-
-    if (currentAudioRef.current) {
-      currentAudioRef.current.pause();
-      currentAudioRef.current = null;
     }
 
     if (recognitionRef.current) {
@@ -156,81 +168,120 @@ export const VoiceCompanionModal: React.FC<VoiceCompanionModalProps> = ({
     setIsListening(false);
   };
 
-  const playAudio = (audioUrl: string) => {
-    if (currentAudioRef.current) {
-      currentAudioRef.current.pause();
-      currentAudioRef.current = null;
-    }
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
+  const playAudio = (audioUrl: string, messageId?: string) => {
+    stopSpeaking();
     try {
       const audio = new Audio(audioUrl);
       currentAudioRef.current = audio;
       setIsSpeaking(true);
+      if (messageId) setPlayingMessageId(messageId);
+
       audio.onended = () => {
         setIsSpeaking(false);
+        setPlayingMessageId(null);
         currentAudioRef.current = null;
       };
       audio.onerror = () => {
         setIsSpeaking(false);
+        setPlayingMessageId(null);
         currentAudioRef.current = null;
       };
       audio.play().catch((err) => {
-        console.warn('Audio playback notice:', err);
+        console.info('Audio playback note:', err);
         setIsSpeaking(false);
+        setPlayingMessageId(null);
       });
     } catch (err) {
-      console.warn('Audio player initial error:', err);
+      console.info('Audio player note:', err);
       setIsSpeaking(false);
+      setPlayingMessageId(null);
     }
   };
 
-  const speakText = (text: string) => {
-    if (currentAudioRef.current) {
-      currentAudioRef.current.pause();
-      currentAudioRef.current = null;
-    }
-    if (!('speechSynthesis' in window)) return;
+  const speakText = (text: string, messageId?: string) => {
+    stopSpeaking();
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.85; // Calming, slower pace for elderly / dementia patients
-    utterance.pitch = 1.0;
+    // Clean text of markdown, asterisks, and emojis for natural pronunciation
+    const cleanText = text
+      .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
+      .replace(/[*#•—_`~]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
 
-    // Pick best available voice for language
-    const voices = window.speechSynthesis.getVoices();
-    if (voices && voices.length > 0) {
-      const targetLang =
-        language === 'hi'
-          ? 'hi'
-          : language === 'as'
-          ? 'as'
-          : language === 'mni'
-          ? 'mni'
-          : 'en';
+    if (!cleanText) return;
 
-      const matchedVoice =
-        voices.find((v) => v.lang.startsWith(targetLang)) ||
-        voices.find((v) => v.lang.includes('IN')) ||
-        voices.find((v) => v.lang.startsWith('en'));
+    try {
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.rate = 0.88; // Calming, relaxed pace
+      utterance.pitch = 1.05; // Pleasant, gentle tone
 
-      if (matchedVoice) {
-        utterance.voice = matchedVoice;
+      // Select best available natural female voice
+      const voices = window.speechSynthesis.getVoices();
+      if (voices && voices.length > 0) {
+        const targetLang =
+          language === 'hi'
+            ? 'hi'
+            : language === 'as'
+            ? 'as'
+            : language === 'mni'
+            ? 'mni'
+            : 'en';
+
+        const matchedVoice =
+          voices.find(
+            (v) =>
+              v.lang.startsWith(targetLang) &&
+              (v.name.includes('Female') ||
+                v.name.includes('Samantha') ||
+                v.name.includes('Victoria') ||
+                v.name.includes('Zira') ||
+                v.name.includes('Google') ||
+                v.name.includes('Swara') ||
+                v.name.includes('Natural'))
+          ) ||
+          voices.find((v) => v.lang.startsWith(targetLang)) ||
+          voices.find(
+            (v) =>
+              (v.lang.includes('IN') || v.lang.startsWith('en')) &&
+              (v.name.includes('Female') ||
+                v.name.includes('Samantha') ||
+                v.name.includes('Natural') ||
+                v.name.includes('Google'))
+          ) ||
+          voices.find((v) => v.lang.startsWith('en'));
+
+        if (matchedVoice) {
+          utterance.voice = matchedVoice;
+        }
       }
+
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+        if (messageId) setPlayingMessageId(messageId);
+      };
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        setPlayingMessageId(null);
+      };
+      utterance.onerror = () => {
+        setIsSpeaking(false);
+        setPlayingMessageId(null);
+      };
+
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      setIsSpeaking(false);
+      setPlayingMessageId(null);
     }
-
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-
-    window.speechSynthesis.speak(utterance);
   };
 
   const handleSend = async (textToSend?: string) => {
     const text = (textToSend || input).trim();
     if (!text) return;
 
+    // Stop speaking before sending new request
+    stopSpeaking();
     setInput('');
     setInterimTranscript('');
     setSpeechError(null);
@@ -268,14 +319,15 @@ export const VoiceCompanionModal: React.FC<VoiceCompanionModalProps> = ({
               year: 'numeric',
             }),
           },
-          history: messages.slice(-6).map((m) => ({ sender: m.sender, text: m.text })),
+          history: messages.slice(-10).map((m) => ({ sender: m.sender, text: m.text })),
         }),
       });
 
       const data = await res.json();
       if (data.reply) {
+        const msgId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
         const saathiMsg: CompanionMessage = {
-          id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          id: msgId,
           sender: 'saathi',
           text: data.reply,
           thought: data.thought,
@@ -283,11 +335,13 @@ export const VoiceCompanionModal: React.FC<VoiceCompanionModalProps> = ({
           hasVoice: Boolean(data.audioUrl),
         };
         setMessages((prev) => [...prev, saathiMsg]);
-        if (autoSpeak) {
+
+        if (autoSpeak && !spokenMessageIdsRef.current.has(msgId)) {
+          spokenMessageIdsRef.current.add(msgId);
           if (data.audioUrl) {
-            playAudio(data.audioUrl);
+            playAudio(data.audioUrl, msgId);
           } else {
-            speakText(data.reply);
+            speakText(data.reply, msgId);
           }
         }
       } else {
@@ -302,14 +356,16 @@ export const VoiceCompanionModal: React.FC<VoiceCompanionModalProps> = ({
           : language === 'mni'
           ? 'ঐহাক অদোমগী লোইননা লৈরি। অদোম য়ুমদা য়াম্না শাংনা অমসুং শান্তিনা লৈরি।'
           : 'I am right here with you. You are completely safe at home and everything is peaceful.';
+      const fallbackId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       const fallbackMsg: CompanionMessage = {
-        id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        id: fallbackId,
         sender: 'saathi',
         text: fallback,
       };
       setMessages((prev) => [...prev, fallbackMsg]);
-      if (autoSpeak) {
-        speakText(fallback);
+      if (autoSpeak && !spokenMessageIdsRef.current.has(fallbackId)) {
+        spokenMessageIdsRef.current.add(fallbackId);
+        speakText(fallback, fallbackId);
       }
     } finally {
       setLoading(false);
@@ -318,17 +374,13 @@ export const VoiceCompanionModal: React.FC<VoiceCompanionModalProps> = ({
 
   /**
    * Start listening using Dual-Engine architecture:
-   * 1. Request microphone stream via getUserMedia
-   * 2. Start MediaRecorder for high-fidelity audio chunks
-   * 3. Start SpeechRecognition for real-time live preview words
+   * 1. Stop any current audio output immediately
+   * 2. Request microphone stream via getUserMedia
+   * 3. Start MediaRecorder for high-fidelity audio chunks
+   * 4. Start SpeechRecognition for real-time live preview words
    */
   const startListening = async () => {
-    // If speaking, stop text-to-speech first so mic doesn't capture it
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-    }
-
+    stopSpeaking();
     setSpeechError(null);
     setMicPermissionDenied(false);
     setInterimTranscript('');
@@ -418,7 +470,6 @@ export const VoiceCompanionModal: React.FC<VoiceCompanionModalProps> = ({
 
         recognition.onerror = (event: any) => {
           console.warn('SpeechRecognition warning:', event?.error);
-          // Do not cancel listening on minor errors; MediaRecorder is running as primary backup!
           if (event?.error === 'not-allowed') {
             setMicPermissionDenied(true);
           }
@@ -579,17 +630,26 @@ export const VoiceCompanionModal: React.FC<VoiceCompanionModalProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-1.5">
+            {/* Direct Stop Speaking Button when audio is active */}
+            {isSpeaking && (
+              <button
+                id="voice-stop-speech-header-btn"
+                type="button"
+                onClick={stopSpeaking}
+                title="Stop speaking"
+                className="px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 bg-rose-600 hover:bg-rose-700 text-white transition-all shadow-xs animate-pulse"
+              >
+                <Square className="w-3 h-3 fill-current" />
+                <span className="text-[11px]">Stop</span>
+              </button>
+            )}
+
             <button
               id="voice-toggle-autospeak-btn"
               type="button"
               onClick={() => {
-                if (currentAudioRef.current) {
-                  currentAudioRef.current.pause();
-                  currentAudioRef.current = null;
-                }
-                if (autoSpeak && 'speechSynthesis' in window) {
-                  window.speechSynthesis.cancel();
-                  setIsSpeaking(false);
+                if (autoSpeak) {
+                  stopSpeaking();
                 }
                 setAutoSpeak(!autoSpeak);
               }}
@@ -605,7 +665,10 @@ export const VoiceCompanionModal: React.FC<VoiceCompanionModalProps> = ({
             </button>
             <button
               id="close-voice-companion-btn"
-              onClick={onClose}
+              onClick={() => {
+                stopSpeaking();
+                onClose();
+              }}
               className="p-1.5 rounded-full text-teal-200 hover:text-white hover:bg-teal-700/50"
             >
               <X className="w-5 h-5" />
@@ -633,19 +696,31 @@ export const VoiceCompanionModal: React.FC<VoiceCompanionModalProps> = ({
                 {m.sender === 'saathi' && (
                   <div className="mt-2 space-y-1.5">
                     <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => {
-                          if (m.audioUrl) {
-                            playAudio(m.audioUrl);
-                          } else {
-                            speakText(m.text);
-                          }
-                        }}
-                        className="flex items-center gap-1 text-[11px] text-teal-700 dark:text-teal-400 font-semibold hover:underline"
-                      >
-                        <Volume2 className="w-3.5 h-3.5" />
-                        <span>{m.hasVoice ? 'Listen to Companion' : 'Listen again'}</span>
-                      </button>
+                      {isSpeaking && playingMessageId === m.id ? (
+                        <button
+                          type="button"
+                          onClick={stopSpeaking}
+                          className="flex items-center gap-1 text-[11px] text-rose-600 dark:text-rose-400 font-semibold hover:underline"
+                        >
+                          <Square className="w-3.5 h-3.5 fill-current animate-pulse" />
+                          <span>Stop speaking</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (m.audioUrl) {
+                              playAudio(m.audioUrl, m.id);
+                            } else {
+                              speakText(m.text, m.id);
+                            }
+                          }}
+                          className="flex items-center gap-1 text-[11px] text-teal-700 dark:text-teal-400 font-semibold hover:underline"
+                        >
+                          <Volume2 className="w-3.5 h-3.5" />
+                          <span>{m.hasVoice ? 'Listen to Companion' : 'Listen aloud'}</span>
+                        </button>
+                      )}
 
                       {m.hasVoice && (
                         <span className="text-[10px] font-medium text-amber-700 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-950/60 px-1.5 py-0.5 rounded-md">

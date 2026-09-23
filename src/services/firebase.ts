@@ -37,7 +37,11 @@ export function getDb(): Firestore | null {
     try {
       dbInstance = getFirestore(app, "ai-studio-cognitivesaathi-62186706-13a4-45a8-b1db-6239b1022dc0");
     } catch (e) {
-      console.warn('Firestore instance notice:', e);
+      try {
+        dbInstance = getFirestore(app);
+      } catch (err) {
+        console.warn('Firestore instance init notice:', err);
+      }
     }
   }
   return dbInstance;

@@ -465,11 +465,6 @@ Rules:
 }
 
 /**
- * Global circuit-breaker timestamp for TTS quota limits
- */
-let ttsQuotaCooldownUntil = 0;
-
-/**
  * Convert linear 16-bit PCM audio buffer into standard WAV file format
  */
 export function pcmToWav(
@@ -501,73 +496,61 @@ export function pcmToWav(
   return Buffer.concat([header, pcmBuffer]);
 }
 
-/**
- * Generate Gemini Voice audio using gemini-3.1-flash-tts-preview with automatic quota circuit-breaker.
- * Uses soothing, natural female voice 'Kore' by default.
- */
 export async function generateGeminiVoice(
-  ai: GoogleGenAI,
+  ai: any,
   text: string,
-  voiceName: string = 'Kore'
+  voiceProfile: string = 'soothing-female'
 ): Promise<string | null> {
   if (!ai || !text || text.trim().length === 0) return null;
-
-  // If Gemini TTS is on quota cooldown, bypass immediately to client Web Speech synthesis
-  if (Date.now() < ttsQuotaCooldownUntil) {
-    return null;
-  }
-
   try {
-    // Strip markdown formatting symbols for natural, fluent speech
-    const cleanSpeech = text
-      .replace(/\*\*(.*?)\*\*/g, '$1')
-      .replace(/\*(.*?)\*/g, '$1')
-      .replace(/\[(.*?)\]/g, '$1')
-      .replace(/#+\s/g, '')
-      .replace(/[-*•]\s+/g, '')
-      .replace(/[\n\r]+/g, ' ')
-      .trim();
-
+    const cleanSpeech = text.replace(/[*#\[\]_]/g, '').replace(/[-•]\s+/g, '').replace(/[\n\r]+/g, ' ').trim();
     if (!cleanSpeech) return null;
 
-    // Keep voice synthesis concise and responsive (max 450 characters)
-    const promptText = `Speak in a very calm, gentle, warm, and soothing natural voice: ${cleanSpeech.slice(0, 450)}`;
+    let voiceName = 'Aoede';
+    let emotionPrompt = '';
+
+    switch (voiceProfile) {
+      case 'gentle-male':
+        voiceName = 'Enceladus';
+        emotionPrompt = `Speak in a gentle, warm, and comforting male voice. Speak very slowly, naturally, and peacefully without sounding robotic:`;
+        break;
+      case 'friendly-male':
+        voiceName = 'Puck';
+        emotionPrompt = `Speak in a friendly, approachable, and conversational male voice. Speak very slowly, naturally, and clearly without sounding robotic:`;
+        break;
+      case 'warm-female':
+        voiceName = 'Sulafat';
+        emotionPrompt = `Speak in a warm, kind, and approachable female voice. Speak very slowly, naturally, and gracefully without sounding robotic:`;
+        break;
+      case 'bright-female':
+        voiceName = 'Zephyr';
+        emotionPrompt = `Speak in a bright, cheerful, and uplifting female voice. Speak very slowly, naturally, and clearly without sounding robotic:`;
+        break;
+      case 'soothing-female':
+      default:
+        voiceName = 'Aoede';
+        emotionPrompt = `Speak in a soft, close-up ASMR whisper tone. You are a warm, reassuring, and loving maternal figure. Speak tenderly, peacefully, and very slowly without sounding robotic:`;
+        break;
+    }
+
+    const promptText = `${emotionPrompt} "${cleanSpeech.slice(0, 450)}"`;
 
     const res = await ai.models.generateContent({
-      model: 'gemini-3.1-flash-tts-preview',
+      model: 'gemini-2.5-flash',
       contents: [{ parts: [{ text: promptText }] }],
       config: {
         responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: voiceName || 'Kore' },
-          },
-        },
-      },
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName } } },
+      } as any,
     });
 
     const pcmBase64 = res.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
     if (!pcmBase64) return null;
 
-    const pcmBuf = Buffer.from(pcmBase64, 'base64');
-    const wavBuf = pcmToWav(pcmBuf, 24000, 1, 16);
+    const wavBuf = pcmToWav(Buffer.from(pcmBase64, 'base64'), 24000, 1, 16);
     return `data:audio/wav;base64,${wavBuf.toString('base64')}`;
-  } catch (err: any) {
-    const errMsg = String(err?.message || err || '');
-    const isQuota =
-      err?.status === 429 ||
-      err?.status === 'RESOURCE_EXHAUSTED' ||
-      errMsg.includes('429') ||
-      errMsg.includes('quota') ||
-      errMsg.includes('RESOURCE_EXHAUSTED');
-
-    if (isQuota) {
-      // Cooldown for 10 minutes: gracefully route voice to client speech synthesis
-      ttsQuotaCooldownUntil = Date.now() + 10 * 60 * 1000;
-      console.info('[Saathi Voice] Gemini TTS free-tier quota reached. Delegating voice to browser speech synthesis.');
-    } else {
-      console.info('[Saathi Voice] Voice generation bypassed:', errMsg.slice(0, 100));
-    }
+  } catch (err) {
+    console.error('[Voice Gen Error]:', err);
     return null;
   }
 }
@@ -579,6 +562,7 @@ export interface SaathiCompanionParams {
   patientId?: string;
   patientName?: string;
   preferredLanguage?: string;
+  voiceProfile?: string;
   history?: Array<{ sender: 'user' | 'saathi'; text: string }>;
   userData?: {
     patient?: any;
@@ -610,6 +594,7 @@ export async function generateSaathiCompanion(params: SaathiCompanionParams): Pr
     patientId: incomingPatientId,
     patientName: incomingName,
     preferredLanguage = 'en',
+    voiceProfile = 'soothing-female',
     history = [],
     userData,
   } = params;
@@ -844,11 +829,7 @@ YOUR PRIME DIRECTIVE:
     }
   }
 
-  // 9. Generate Gemini Voice Audio with gemini-3.1-flash-tts-preview
-  let audioUrl: string | null = null;
-  if (ai && reply) {
-    audioUrl = await generateGeminiVoice(ai, reply);
-  }
+  const audioUrl = (ai && reply) ? await generateGeminiVoice(ai, reply, voiceProfile) : null;
 
   return {
     reply,

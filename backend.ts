@@ -1088,6 +1088,7 @@ app.post('/api/ai/companion', async (req, res) => {
       patientId: incomingPatientId,
       patientName: incomingName,
       preferredLanguage = 'en',
+      voiceProfile = 'soothing-female',
       role = 'PATIENT',
       context = {},
       userData,
@@ -1121,6 +1122,7 @@ app.post('/api/ai/companion', async (req, res) => {
       patientId: authorizedPatientId,
       patientName,
       preferredLanguage,
+      voiceProfile,
       history,
       userData: userData || context,
     });
@@ -1856,6 +1858,7 @@ async function startServer() {
 
           if (payload.type === 'message' || payload.type === 'user_input') {
             const userText = payload.text || payload.message;
+            const voiceProfile = payload.voiceProfile || 'soothing-female';
             if (!userText) return;
 
             ws.send(JSON.stringify({ type: 'state', state: 'THINKING' }));
@@ -1922,11 +1925,15 @@ YOUR PRIME DIRECTIVE:
                 } catch (wsFollowUpErr: any) {
                   followUpRes = await ai.models.generateContent({ model: 'gemini-3.1-flash-lite', contents: followUpContents, config: bypassConfig as any });
                 }
-                ws.send(JSON.stringify({ type: 'reply', text: followUpRes.text || 'I am here with you.', executedTools: [call.name] }));
+                const followUpText = followUpRes.text || 'I am here with you.';
+                const audioUrl = await generateGeminiVoice(ai, followUpText, voiceProfile);
+                ws.send(JSON.stringify({ type: 'reply', text: followUpText, audioUrl, executedTools: [call.name] }));
                 return;
               }
 
-              ws.send(JSON.stringify({ type: 'reply', text: response.text || 'I am peaceful and safe.' }));
+              const replyText = response.text || 'I am peaceful and safe.';
+              const audioUrl = await generateGeminiVoice(ai, replyText, voiceProfile);
+              ws.send(JSON.stringify({ type: 'reply', text: replyText, audioUrl }));
               return;
             }
 
@@ -1935,6 +1942,7 @@ YOUR PRIME DIRECTIVE:
               JSON.stringify({
                 type: 'reply',
                 text: `Hello ${patientName}. You are completely safe at home and everything is peaceful today.`,
+                audioUrl: null,
               })
             );
           }

@@ -64,6 +64,7 @@ export const VoiceCompanionModal: React.FC<VoiceCompanionModalProps> = ({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
   const [expandedThoughts, setExpandedThoughts] = useState<Record<string, boolean>>({});
+  const [voiceProfile, setVoiceProfile] = useState('soothing-female');
 
   // Audio recording & Speech recognition references
   const recognitionRef = useRef<any>(null);
@@ -303,6 +304,7 @@ export const VoiceCompanionModal: React.FC<VoiceCompanionModalProps> = ({
           patientId: patient?.id,
           patientName: patient?.fullName || patient?.preferredName || 'Beloved Senior',
           preferredLanguage: language,
+          voiceProfile,
           role: 'PATIENT',
           userData: {
             patient,
@@ -675,6 +677,26 @@ export const VoiceCompanionModal: React.FC<VoiceCompanionModalProps> = ({
               <span className="sr-only">Close</span>
             </button>
           </div>
+        </div>
+
+        {/* Voice Selection Bar */}
+        <div className="bg-teal-900 text-teal-100 px-4 py-2 flex items-center justify-between gap-2 border-b border-teal-800 text-xs">
+          <label htmlFor="voice-profile-select" className="text-[11px] font-semibold text-teal-200 shrink-0 flex items-center gap-1.5 cursor-pointer">
+            <Volume2 className="w-3.5 h-3.5 text-amber-300" />
+            <span>AI Voice:</span>
+          </label>
+          <select
+            id="voice-profile-select"
+            value={voiceProfile}
+            onChange={(e) => setVoiceProfile(e.target.value)}
+            className="bg-teal-950 text-amber-300 border border-teal-700 rounded-lg px-2.5 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer truncate max-w-[240px] sm:max-w-xs"
+          >
+            <option value="soothing-female">Soothing Maternal (Female)</option>
+            <option value="gentle-male">Calm & Gentle (Male)</option>
+            <option value="friendly-male">Friendly & Casual (Male)</option>
+            <option value="warm-female">Warm & Approachable (Female)</option>
+            <option value="bright-female">Bright & Clear (Female)</option>
+          </select>
         </div>
 
         {/* Message Log */}
